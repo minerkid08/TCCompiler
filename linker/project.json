@@ -1,0 +1,8 @@
+{
+  "name": "linker",
+  "type": "program",
+  "out": "linker",
+  "build": [],
+  "libs": ["lib"],
+  "lang": "c"
+}

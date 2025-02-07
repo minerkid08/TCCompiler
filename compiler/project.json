@@ -1,0 +1,8 @@
+{
+  "name": "compiler",
+  "type": "program",
+  "out": "compiler",
+  "build": [],
+  "libs": ["lib"],
+  "lang": "c"
+}

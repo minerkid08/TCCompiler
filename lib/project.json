@@ -1,0 +1,8 @@
+{
+  "name": "lib",
+  "type": "static",
+  "out": "lib.a",
+  "build": [],
+  "export": ["src"],
+  "lang": "c"
+}

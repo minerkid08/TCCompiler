@@ -1,0 +1,8 @@
+{
+  "projects": [
+    "compiler",
+    "linker",
+    "lib"
+  ],
+  "noLibs": true
+}
