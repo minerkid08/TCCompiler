@@ -60,7 +60,7 @@ int isNums(const char* str)
 	return 1;
 }
 
-void addToken(Token* tokens, const char* str)
+void addToken(Token** tokens, const char* str)
 {
 	int len = strlen(str);
 	int type;
@@ -89,9 +89,9 @@ void addToken(Token* tokens, const char* str)
 	else
 		type = TOKEN_LITERAL;
 
-	int tokenId = dynList_size(tokens);
-	dynList_resize((void**)&tokens, tokenId + 1);
-	Token* token = &tokens[tokenId];
+	int tokenId = dynList_size(*tokens);
+	dynList_resize((void**)tokens, tokenId + 1);
+	Token* token = &(*tokens)[tokenId];
 	token->type = type;
 	token->data = tokenStr;
 }
@@ -137,7 +137,7 @@ Token* tokenize(const char* filename)
 				if (!isNumc(c) && !isLetter(c))
 				{
 					buf[bufLen] = '\0';
-					addToken(tokens, buf);
+					addToken(&tokens, buf);
 					bufLen = 0;
 					inToken = 0;
 				}
@@ -161,7 +161,7 @@ Token* tokenize(const char* filename)
 					else
 					{
 						buf[bufLen] = '\0';
-						addToken(tokens, buf);
+						addToken(&tokens, buf);
 						bufLen = 0;
 						inToken = 0;
 					}
@@ -176,12 +176,12 @@ Token* tokenize(const char* filename)
 				inStr = 0;
 				inToken = 0;
 				buf[bufLen] = '\0';
-				addToken(tokens, buf);
+				addToken(&tokens, buf);
 				bufLen = 0;
 			}
 		}
 	}
-	addToken(tokens, "\1");
+	addToken(&tokens, "\1");
 
 	free(data);
 

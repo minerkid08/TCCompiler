@@ -25,6 +25,7 @@ void* dynList_new(int size, int elemSize)
 void dynList_resize(void** list2, int newSize)
 {
 	void* list = *list2;
+  assert(list);
 	DynamicListHeader* header = dynList_header(list);
 	if (header->capacity >= newSize)
 	{
@@ -42,6 +43,7 @@ void dynList_resize(void** list2, int newSize)
 void dynList_reserve(void** list2, int newCapacity)
 {
 	void* list = *list2;
+  assert(list);
 	DynamicListHeader* header = dynList_header(list);
 	if (header->capacity >= newCapacity)
 		return;
@@ -54,6 +56,7 @@ void dynList_reserve(void** list2, int newCapacity)
 
 void dynList_free(void* list)
 {
+  assert(list);
 	DynamicListHeader* header = dynList_header(list);
 	free(header);
 }
