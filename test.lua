@@ -11,6 +11,8 @@ end
 
 function main()
   out(4);
-  local e = 7;
-  doThing(4, e, 6);
+  local e = 4;
+  local f = 5;
+  local g = 6;
+  doThing(g, f, e);
 end

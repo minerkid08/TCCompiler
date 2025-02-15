@@ -143,21 +143,21 @@ void parseFunction(int* i)
 				if (strcmp(token->data, "$") == 0)
 				{
 					token = consumeToken();
-          char found = 0;
+					char found = 0;
 					for (int j = 0; j < fun->argc; j++)
 					{
 						if (strcmp(token->data, fun->argNames[j]) == 0)
 						{
-              found = 1;
+							found = 1;
 							dataLen += snprintf(fun->data + dataLen, dataMaxLen - dataLen, "r%d ", j + 1);
 							break;
 						}
 					}
-          if(!found)
-          {
-            printf("unknown asm variable '%s'\n", (char*)token->data);
-            exit(1);
-          }
+					if (!found)
+					{
+						printf("unknown asm variable '%s'\n", (char*)token->data);
+						exit(1);
+					}
 				}
 				else if (token->type == TOKEN_NEWLINE)
 				{
@@ -238,8 +238,9 @@ void parseFunctionCall(int* i, char* data, int* dataLen, int* maxDataLen)
 		{
 			int ind = varIndex(args[i2]->data);
 			if (ind != 0)
-				writeStr("sub r15, sp, %d\nload r%d [r15]\n", ind, i2 + 1);
-			writeStr("load r%d [sp]\n", i2 + 1);
+				writeStr("sub r13, sp, %d\nload r%d [r13]\n", ind, i2 + 1);
+			else
+				writeStr("load r%d [sp]\n", i2 + 1);
 		}
 	}
 	if (fun->type & FUNCTION_INLINE)
