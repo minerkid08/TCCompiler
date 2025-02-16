@@ -39,7 +39,7 @@ char* out;
 int outLen = 0;
 int outMaxLen = 512;
 
-#define writeStr(fmt, args...) *dataLen += snprintf(data + *dataLen, *maxDataLen - *dataLen, fmt, args)
+#define writeStr(args...) *dataLen += snprintf(data + *dataLen, *maxDataLen - *dataLen, args)
 
 int varIndex(const char* name)
 {
@@ -238,15 +238,17 @@ void parseFunctionCall(int* i, char* data, int* dataLen, int* maxDataLen)
 		{
 			int ind = varIndex(args[i2]->data);
 			if (ind != 0)
-				writeStr("sub r13, sp, %d\nload r%d [r13]\n", ind, i2 + 1);
+				writeStr("sub r12, sp, %d\nload, r%d [r12]\n", ind, i2 + 1);
 			else
-				writeStr("load r%d [sp]\n", i2 + 1);
+				writeStr("load r%d, [sp]\n", i2 + 1);
 		}
 	}
+  writeStr("push r13\nmov r13, sp\n");
 	if (fun->type & FUNCTION_INLINE)
 		writeStr("%s", fun->data);
 	else
 		writeStr("call %s\n", name);
+  writeStr("mov sp, r13\npop r13\n");
 	*i = *i + 2;
 	free(args);
 }
