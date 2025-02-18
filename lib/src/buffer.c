@@ -3,7 +3,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <vadefs.h>
 
 void bufferInit(Buffer* buf)
 {

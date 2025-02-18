@@ -8,6 +8,11 @@ asm function doThing(a, b, c)
   out r4
 end
 
+function fun(a, b)
+  doThing(a, b, 2);
+  out(a);
+end
+
 function main()
   out(4);
   local e = 4;

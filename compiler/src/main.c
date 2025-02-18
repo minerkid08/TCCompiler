@@ -121,7 +121,7 @@ void parseFunction(int* i)
 
 	if (fun->data.data)
 	{
-    Buffer* data = &(fun->data);
+		Buffer* data = &(fun->data);
 		char running = 1;
 		while (running)
 		{
@@ -226,20 +226,40 @@ void parseFunctionCall(int* i, Buffer* data)
 		exit(1);
 	}
 
-	for (i2 = 0; i2 < argc; i2++)
+	bufferWrite(data, "push r13\nmov r13, sp\n");
+	if (fun->type & FUNCTION_ASM)
 	{
-		if (args[i2]->type == TOKEN_NUMBER)
-			bufferWrite(data, "mov r%d, %s\n", i2 + 1, (char*)args[i2]->data);
-		else if (args[i2]->type == TOKEN_LITERAL)
+		for (i2 = 0; i2 < argc; i2++)
 		{
-			int ind = varIndex(args[i2]->data);
-			if (ind != 0)
-				bufferWrite(data, "sub r12, sp, %d\nload, r%d [r12]\n", ind, i2 + 1);
-			else
-				bufferWrite(data, "load r%d, [sp]\n", i2 + 1);
+			if (args[i2]->type == TOKEN_NUMBER)
+				bufferWrite(data, "mov r%d, %s\n", i2 + 1, (char*)args[i2]->data);
+			else if (args[i2]->type == TOKEN_LITERAL)
+			{
+				int ind = varIndex(args[i2]->data);
+				if (ind != 0)
+					bufferWrite(data, "sub r12, sp, %d\nload, r%d [r12]\n", ind, i2 + 1);
+				else
+					bufferWrite(data, "load r%d, [sp]\n", i2 + 1);
+			}
 		}
 	}
-	bufferWrite(data, "push r13\nmov r13, sp\n");
+	else
+	{
+		for (i2 = 0; i2 < argc; i2++)
+		{
+			if (args[i2]->type == TOKEN_NUMBER)
+				bufferWrite(data, "push %s\n", (char*)args[i2]->data);
+			else if (args[i2]->type == TOKEN_LITERAL)
+			{
+				int ind = varIndex(args[i2]->data);
+				if (ind != 0)
+					bufferWrite(data, "sub r12, sp, %d\nload, r1 [r12]\n", ind);
+				else
+					bufferWrite(data, "load r1, [sp]\n");
+				bufferWrite(data, "push r1\n");
+			}
+		}
+	}
 	if (fun->type & FUNCTION_INLINE)
 		bufferWrite(data, "%s", fun->data.data);
 	else
@@ -266,7 +286,7 @@ void parseVarDecl(int* i, Buffer* data)
 
 	if (token->type == TOKEN_NEWLINE || token->type == TOKEN_SEMICOLON)
 	{
-    bufferWrite(data, "sub sp, sp, 2\n");
+		bufferWrite(data, "sub sp, sp, 2\n");
 		return;
 	}
 	if (strcmp(token->data, "="))
@@ -275,7 +295,7 @@ void parseVarDecl(int* i, Buffer* data)
 		exit(1);
 	}
 	token = consumeToken();
-  bufferWrite(data, "push %s\n", (char*)token->data); 
+	bufferWrite(data, "push %s\n", (char*)token->data);
 }
 
 void parseStatement(int* i, Buffer* data)
@@ -322,7 +342,7 @@ int main(int argc, const char** argv)
 
 	int tokenC = dynList_size(tokens);
 
-  bufferInit(&out);
+	bufferInit(&out);
 
 	for (int i = 0; i < tokenC; i++)
 	{
@@ -347,8 +367,7 @@ int main(int argc, const char** argv)
 		}
 		parseStatement(&i, &out);
 	}
-	printf("%s\n", out.data);
-
+	printf("%s", out.data);
 
 	return 0;
 }
