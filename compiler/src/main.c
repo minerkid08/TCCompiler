@@ -1,3 +1,4 @@
+#include "buffer.h"
 #include "dynList.h"
 #include "token.h"
 #include "tokenizer.h"
@@ -15,7 +16,7 @@ typedef struct
 	int argc;
 	const char* name;
 	const char** argNames;
-	char* data;
+	Buffer data;
 } Function;
 
 typedef struct
@@ -35,11 +36,7 @@ int* scopeVarCount;
 
 int modifiers = 0;
 
-char* out;
-int outLen = 0;
-int outMaxLen = 512;
-
-#define writeStr(args...) *dataLen += snprintf(data + *dataLen, *maxDataLen - *dataLen, args)
+Buffer out;
 
 int varIndex(const char* name)
 {
@@ -54,7 +51,7 @@ int varIndex(const char* name)
 	return 0;
 }
 
-void parseStatement(int* i, char* data, int* dataLen, int* maxDataLen);
+void parseStatement(int* i, Buffer* data);
 
 void parseFunction(int* i)
 {
@@ -109,12 +106,12 @@ void parseFunction(int* i)
 	token = consumeToken();
 	if (token->type == TOKEN_NEWLINE)
 	{
-		fun->data = malloc(512);
+		bufferInit(&fun->data);
 	}
 	else if (token->type == TOKEN_KEYWORD)
 	{
 		if (strcmp(token->data, "end") == 0)
-			fun->data = 0;
+			fun->data.data = 0;
 	}
 	else
 	{
@@ -122,10 +119,9 @@ void parseFunction(int* i)
 		exit(1);
 	}
 
-	if (fun->data)
+	if (fun->data.data)
 	{
-		int dataMaxLen = 512;
-		int dataLen = 0;
+    Buffer* data = &(fun->data);
 		char running = 1;
 		while (running)
 		{
@@ -149,7 +145,7 @@ void parseFunction(int* i)
 						if (strcmp(token->data, fun->argNames[j]) == 0)
 						{
 							found = 1;
-							dataLen += snprintf(fun->data + dataLen, dataMaxLen - dataLen, "r%d ", j + 1);
+							bufferWrite(data, "r%d ", j + 1);
 							break;
 						}
 					}
@@ -161,32 +157,32 @@ void parseFunction(int* i)
 				}
 				else if (token->type == TOKEN_NEWLINE)
 				{
-					dataLen += snprintf(fun->data + dataLen, dataMaxLen - dataLen, "\n");
+					bufferWrite(data, "\n");
 				}
 				else if (token->type == TOKEN_COMMA)
 				{
-					dataLen -= 1;
-					dataLen += snprintf(fun->data + dataLen, dataMaxLen - dataLen, ", ");
+					fun->data.len--;
+					bufferWrite(data, ", ");
 				}
 				else
 				{
-					dataLen += snprintf(fun->data + dataLen, dataMaxLen - dataLen, "%s ", (char*)token->data);
+					bufferWrite(data, "%s ", (char*)token->data);
 				}
 			}
 			else
 			{
-				parseStatement(i, fun->data, &dataLen, &dataMaxLen);
+				parseStatement(i, data);
 			}
 		}
 
 		if (!(fun->type & FUNCTION_INLINE))
-			outLen += snprintf(out + outLen, outMaxLen - outLen, "%s:\n%sret\n\n", fun->name, fun->data);
+			bufferWrite(&out, "%s:\n%sret\n\n", fun->name, fun->data.data);
 	}
 
 	modifiers = 0;
 }
 
-void parseFunctionCall(int* i, char* data, int* dataLen, int* maxDataLen)
+void parseFunctionCall(int* i, Buffer* data)
 {
 	const char* name = tokens[*i].data;
 	Function* fun = 0;
@@ -233,27 +229,27 @@ void parseFunctionCall(int* i, char* data, int* dataLen, int* maxDataLen)
 	for (i2 = 0; i2 < argc; i2++)
 	{
 		if (args[i2]->type == TOKEN_NUMBER)
-			writeStr("mov r%d, %s\n", i2 + 1, (char*)args[i2]->data);
+			bufferWrite(data, "mov r%d, %s\n", i2 + 1, (char*)args[i2]->data);
 		else if (args[i2]->type == TOKEN_LITERAL)
 		{
 			int ind = varIndex(args[i2]->data);
 			if (ind != 0)
-				writeStr("sub r12, sp, %d\nload, r%d [r12]\n", ind, i2 + 1);
+				bufferWrite(data, "sub r12, sp, %d\nload, r%d [r12]\n", ind, i2 + 1);
 			else
-				writeStr("load r%d, [sp]\n", i2 + 1);
+				bufferWrite(data, "load r%d, [sp]\n", i2 + 1);
 		}
 	}
-  writeStr("push r13\nmov r13, sp\n");
+	bufferWrite(data, "push r13\nmov r13, sp\n");
 	if (fun->type & FUNCTION_INLINE)
-		writeStr("%s", fun->data);
+		bufferWrite(data, "%s", fun->data.data);
 	else
-		writeStr("call %s\n", name);
-  writeStr("mov sp, r13\npop r13\n");
+		bufferWrite(data, "call %s\n", name);
+	bufferWrite(data, "mov sp, r13\npop r13\n");
 	*i = *i + 2;
 	free(args);
 }
 
-void parseVarDecl(int* i, char* data, int* dataLen, int* maxDataLen)
+void parseVarDecl(int* i, Buffer* data)
 {
 	Token* token = consumeToken();
 	const char* name = token->data;
@@ -270,7 +266,7 @@ void parseVarDecl(int* i, char* data, int* dataLen, int* maxDataLen)
 
 	if (token->type == TOKEN_NEWLINE || token->type == TOKEN_SEMICOLON)
 	{
-		*dataLen += snprintf(data + *dataLen, *maxDataLen - *dataLen, "sub sp, sp, 2\n");
+    bufferWrite(data, "sub sp, sp, 2\n");
 		return;
 	}
 	if (strcmp(token->data, "="))
@@ -279,10 +275,10 @@ void parseVarDecl(int* i, char* data, int* dataLen, int* maxDataLen)
 		exit(1);
 	}
 	token = consumeToken();
-	*dataLen += snprintf(data + *dataLen, *maxDataLen - *dataLen, "push %s\n", (char*)token->data);
+  bufferWrite(data, "push %s\n", (char*)token->data); 
 }
 
-void parseStatement(int* i, char* data, int* dataLen, int* maxDataLen)
+void parseStatement(int* i, Buffer* data)
 {
 	Token* token = tokens + *i;
 	if (token->type == TOKEN_LITERAL)
@@ -291,7 +287,7 @@ void parseStatement(int* i, char* data, int* dataLen, int* maxDataLen)
 
 		if (token->type == TOKEN_OPENPARAN)
 		{
-			parseFunctionCall(i, data, dataLen, maxDataLen);
+			parseFunctionCall(i, data);
 			return;
 		}
 	}
@@ -299,7 +295,7 @@ void parseStatement(int* i, char* data, int* dataLen, int* maxDataLen)
 	{
 		if (strcmp(token->data, "local") == 0)
 		{
-			parseVarDecl(i, data, dataLen, maxDataLen);
+			parseVarDecl(i, data);
 			return;
 		}
 	}
@@ -326,7 +322,7 @@ int main(int argc, const char** argv)
 
 	int tokenC = dynList_size(tokens);
 
-	out = malloc(512);
+  bufferInit(&out);
 
 	for (int i = 0; i < tokenC; i++)
 	{
@@ -349,9 +345,10 @@ int main(int argc, const char** argv)
 				continue;
 			}
 		}
-		parseStatement(&i, out, &outLen, &outMaxLen);
+		parseStatement(&i, &out);
 	}
-	printf("%s\n", out);
+	printf("%s\n", out.data);
+
 
 	return 0;
 }
