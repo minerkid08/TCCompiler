@@ -61,14 +61,14 @@ void dynList_free(void* list)
 	free(header);
 }
 
-int dynList_size(void* list)
+int dynList_size(const void* list)
 {
-	DynamicListHeader* header = dynList_header(list);
+	const DynamicListHeader* header = dynList_header(list);
 	return header->size;
 }
 
-int dynList_capacity(void* list)
+int dynList_capacity(const void* list)
 {
-	DynamicListHeader* header = dynList_header(list);
+	const DynamicListHeader* header = dynList_header(list);
 	return header->capacity;
 }
