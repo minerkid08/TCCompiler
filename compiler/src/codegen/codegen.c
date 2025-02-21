@@ -3,6 +3,7 @@
 #include "dynList.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define err(args...)                                                                                                   \
 	{                                                                                                                  \
@@ -57,6 +58,28 @@ void genStatements(const StatementNode* statements, Buffer* buf)
 	}
 }
 
+int getVar(const char* name)
+{
+	int len = dynList_size(vars);
+	for (int i = 0; i < len; i++)
+	{
+		if (strcmp(vars[i], name) == 0)
+			return i;
+	}
+  err("variable %s not found\n", name);
+	return 0;
+}
+
+void loadVar(Buffer* buf, int i, const char* name)
+{
+	int idx = getVar(name);
+	int len = dynList_size(vars);
+	if (idx == len - 1)
+		bufferWrite(buf, "load r%d, [sp]\n", i);
+	else
+		bufferWrite(buf, "sub r%d, sp, %d\nload r%d, [r%d]\n", i, (len - idx - 1) * 2, i, i);
+}
+
 Buffer* genCode(const StatementNode* statements)
 {
 	Buffer* buf = malloc(sizeof(Buffer));
@@ -87,8 +110,22 @@ Buffer* genCode(const StatementNode* statements)
 				bufferWrite(buf, "sub sp, sp, 2 ; %s\n", varDecl->name);
 			break;
 		}
+		case StatementTypeFunCall: {
+			const StatementNodeFunCall* funCall = &node->funCall;
+			for (int j = 0; j < funCall->argc; j++)
+			{
+				const ExprNode* expr = funCall->argExprs[j];
+				if (expr->type == ExprTypeNum)
+					bufferWrite(buf, "mov r%d, %d\n", j + 1, expr->num.val);
+				else if (expr->type == ExprTypeVar)
+					loadVar(buf, j + 1, expr->var.name);
+				else
+					err("only var an num exprs are supported\n");
+			}
+      bufferWrite(buf, "call %s\n", funCall->name); 
+			break;
 		}
-    printf("e %d\n", i);
+		}
 	}
 	popScope(buf);
 
