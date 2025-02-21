@@ -41,23 +41,6 @@ void popScope(Buffer* buf)
 	bufferWrite(buf, "mov sp, r13\npop r13\n");
 }
 
-void genStatements(const StatementNode* statements, Buffer* buf)
-{
-	int len = dynList_size(statements);
-	for (int i = 0; i < len; i++)
-	{
-		const StatementNode* statement = statements + i;
-		switch (statement->type)
-		{
-		case StatementTypeVarDef: {
-			const StatementNodeVarDef* var = &statement->varDef;
-			pushVar(var->name);
-			break;
-		}
-		}
-	}
-}
-
 int getVar(const char* name)
 {
 	int len = dynList_size(vars);
@@ -66,18 +49,57 @@ int getVar(const char* name)
 		if (strcmp(vars[i], name) == 0)
 			return i;
 	}
-  err("variable %s not found\n", name);
+	err("variable %s not found\n", name);
 	return 0;
 }
 
-void loadVar(Buffer* buf, int i, const char* name)
+void loadVar(Buffer* buf, int reg, const char* name)
 {
 	int idx = getVar(name);
 	int len = dynList_size(vars);
 	if (idx == len - 1)
-		bufferWrite(buf, "load r%d, [sp]\n", i);
+		bufferWrite(buf, "load r%d, [sp] ; %s\n", reg, name);
 	else
-		bufferWrite(buf, "sub r%d, sp, %d\nload r%d, [r%d]\n", i, (len - idx - 1) * 2, i, i);
+		bufferWrite(buf, "sub r%d, sp, %d\nload r%d, [r%d] ; %s\n", reg, (len - idx - 1) * 2, reg, reg, name);
+}
+
+void genExpr(Buffer* buf, int reg, const ExprNode* expr)
+{
+	int len = dynList_size(expr);
+	if (len > 1)
+		err("currently expressions can only have one token\n");
+	if (expr->type == ExprTypeNum)
+		bufferWrite(buf, "mov r%d, %d\n", reg, expr->num.val);
+	else
+		loadVar(buf, reg, expr->var.name);
+}
+
+void genStatement(Buffer* buf, const StatementNode* node)
+{
+	switch (node->type)
+	{
+	case StatementTypeVarDef: {
+		const StatementNodeVarDef* varDecl = &node->varDef;
+		pushVar(varDecl->name);
+		if (varDecl->expr)
+		{
+			genExpr(buf, 1, varDecl->expr);
+			bufferWrite(buf, "push r1 ; %s\n", varDecl->name);
+		}
+		else
+			bufferWrite(buf, "sub sp, sp, 2 ; %s\n", varDecl->name);
+		break;
+	}
+	case StatementTypeFunCall: {
+		const StatementNodeFunCall* funCall = &node->funCall;
+		for (int j = 0; j < funCall->argc; j++)
+		{
+			genExpr(buf, j + 1, funCall->argExprs[j]);
+		}
+		bufferWrite(buf, "call %s\n", funCall->name);
+		break;
+	}
+	}
 }
 
 Buffer* genCode(const StatementNode* statements)
@@ -90,44 +112,23 @@ Buffer* genCode(const StatementNode* statements)
 	scopeVarCounts = dynList_new(0, sizeof(int));
 	functions = dynList_new(0, sizeof(StatementNodeFunc));
 
-	pushScope(buf);
-
 	for (int i = 0; i < len; i++)
 	{
 		const StatementNode* node = statements + i;
-		switch (node->type)
+		if (node->type == StatementTypeFunc)
 		{
-		case StatementTypeVarDef: {
-			const StatementNodeVarDef* varDecl = &node->varDef;
-			pushVar(varDecl->name);
-			if (varDecl->expr)
-			{
-				if (varDecl->expr->type != ExprTypeNum)
-					err("only number exprs are currently supported\n");
-				bufferWrite(buf, "mov r1, %d\npush r1 ; %s\n", varDecl->expr->num.val, varDecl->name);
-			}
-			else
-				bufferWrite(buf, "sub sp, sp, 2 ; %s\n", varDecl->name);
-			break;
-		}
-		case StatementTypeFunCall: {
-			const StatementNodeFunCall* funCall = &node->funCall;
-			for (int j = 0; j < funCall->argc; j++)
-			{
-				const ExprNode* expr = funCall->argExprs[j];
-				if (expr->type == ExprTypeNum)
-					bufferWrite(buf, "mov r%d, %d\n", j + 1, expr->num.val);
-				else if (expr->type == ExprTypeVar)
-					loadVar(buf, j + 1, expr->var.name);
-				else
-					err("only var an num exprs are supported\n");
-			}
-      bufferWrite(buf, "call %s\n", funCall->name); 
-			break;
-		}
+			const StatementNodeFunc* func = &node->func;
+			bufferWrite(buf, "%s:\n", func->name);
+			pushScope(buf);
+			for (int j = 0; j < func->argc; j++)
+				bufferWrite(buf, "push r%d ; %s\n", j + 1, func->argNames[j]);
+			int len = dynList_size(func->statements);
+			for (int i = 0; i < len; i++)
+				genStatement(buf, func->statements + i);
+			popScope(buf);
+			bufferWrite(buf, "ret ; %s\n", func->name);
 		}
 	}
-	popScope(buf);
 
 	return buf;
 }

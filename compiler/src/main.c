@@ -56,13 +56,14 @@ void printNodes(StatementNode* nodes, const char* indent)
 
 int main(int argc, const char** argv)
 {
-	if (argc == 0)
+  const char* filename = argv[1];
+	if (argc == 1)
 	{
 		printf("more args pls\n");
-		return 1;
+    filename = "test2.lua";
 	}
 
-	Token* tokens = tokenize(argv[1]);
+	Token* tokens = tokenize(filename);
 
 	StatementNode* nodes = parse(tokens);
   Buffer* buf = genCode(nodes);
