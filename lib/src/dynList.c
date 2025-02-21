@@ -13,11 +13,20 @@ typedef struct
 
 void* dynList_new(int size, int elemSize)
 {
+	char zero = 0;
+	if (size == 0)
+	{
+		size = 5;
+		zero = 1;
+	}
 	int sizeBytes = sizeof(DynamicListHeader) + elemSize * size;
 	DynamicListHeader* header = malloc(sizeBytes);
 	assert(header);
 	header->elemSize = elemSize;
-	header->size = size;
+	if (zero)
+		header->size = 0;
+	else
+		header->size = size;
 	header->capacity = size;
 	return header + 1;
 }
@@ -25,7 +34,7 @@ void* dynList_new(int size, int elemSize)
 void dynList_resize(void** list2, int newSize)
 {
 	void* list = *list2;
-  assert(list);
+	assert(list);
 	DynamicListHeader* header = dynList_header(list);
 	if (header->capacity >= newSize)
 	{
@@ -43,7 +52,7 @@ void dynList_resize(void** list2, int newSize)
 void dynList_reserve(void** list2, int newCapacity)
 {
 	void* list = *list2;
-  assert(list);
+	assert(list);
 	DynamicListHeader* header = dynList_header(list);
 	if (header->capacity >= newCapacity)
 		return;
@@ -56,7 +65,7 @@ void dynList_reserve(void** list2, int newCapacity)
 
 void dynList_free(void* list)
 {
-  assert(list);
+	assert(list);
 	DynamicListHeader* header = dynList_header(list);
 	free(header);
 }
