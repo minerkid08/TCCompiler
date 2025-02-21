@@ -14,11 +14,12 @@ const char** vars;
 int* scopeVarCounts;
 StatementNodeFunc* functions;
 
-void pushScope()
+void pushScope(Buffer* buf)
 {
 	int scopec = dynList_size(scopeVarCounts);
-	dynList_resize((void**)&scopec, scopec + 1);
+	dynList_resize((void**)&scopeVarCounts, scopec + 1);
 	scopeVarCounts[scopec] = 0;
+	bufferWrite(buf, "push r13\nmov r13, sp\n");
 }
 
 void pushVar(const char* name)
@@ -30,12 +31,13 @@ void pushVar(const char* name)
 	vars[varc] = name;
 }
 
-void popScope()
+void popScope(Buffer* buf)
 {
 	int varc = dynList_size(vars);
 	int scopec = dynList_size(scopeVarCounts);
 	int newLen = varc - scopeVarCounts[scopec - 1];
 	dynList_resize((void**)&vars, newLen);
+	bufferWrite(buf, "mov sp, r13\npop r13\n");
 }
 
 void genStatements(const StatementNode* statements, Buffer* buf)
@@ -48,8 +50,8 @@ void genStatements(const StatementNode* statements, Buffer* buf)
 		{
 		case StatementTypeVarDef: {
 			const StatementNodeVarDef* var = &statement->varDef;
-      pushVar(var->name);
-		break;
+			pushVar(var->name);
+			break;
 		}
 		}
 	}
@@ -65,17 +67,30 @@ Buffer* genCode(const StatementNode* statements)
 	scopeVarCounts = dynList_new(0, sizeof(int));
 	functions = dynList_new(0, sizeof(StatementNodeFunc));
 
+	pushScope(buf);
+
 	for (int i = 0; i < len; i++)
 	{
 		const StatementNode* node = statements + i;
-		if (node->type != StatementTypeFunc)
-			err("only function definitions can be top level\n");
-		const StatementNodeFunc* func = &node->func;
-		bufferWrite(buf, "%s:\n", func->name);
-		pushScope();
-		genStatements(func->statements, buf);
-		popScope();
+		switch (node->type)
+		{
+		case StatementTypeVarDef: {
+			const StatementNodeVarDef* varDecl = &node->varDef;
+			pushVar(varDecl->name);
+			if (varDecl->expr)
+			{
+				if (varDecl->expr->type != ExprTypeNum)
+					err("only number exprs are currently supported\n");
+				bufferWrite(buf, "mov r1, %d\npush r1 ; %s\n", varDecl->expr->num.val, varDecl->name);
+			}
+			else
+				bufferWrite(buf, "sub sp, sp, 2 ; %s\n", varDecl->name);
+			break;
+		}
+		}
+    printf("e %d\n", i);
 	}
+	popScope(buf);
 
 	return buf;
 }
