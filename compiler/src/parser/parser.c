@@ -27,22 +27,23 @@ StatementNode* parse(const Token* tokens)
 	int len = dynList_size(tokens);
 	for (int i = 0; i < len; i++)
 	{
-		nodec++;
-		dynList_resize((void**)&outNodes, nodec);
+		dynList_resize((void**)&outNodes, nodec + 1);
 		const Token* token = tokens + i;
 		if (token->type == TOKEN_KEYWORD)
 		{
 			if (strcmp(token->data, "inline") == 0 || strcmp(token->data, "asm") == 0 ||
 				strcmp(token->data, "function") == 0)
 			{
-				parseFunction(tokens, &i, outNodes + (nodec - 1));
+				parseFunction(tokens, &i, outNodes + nodec);
+				nodec++;
 				continue;
 			}
 		}
 		if (token->type == TOKEN_EOF)
 			break;
-		parseStatement(tokens, &i, outNodes + (nodec - 1));
+		nodec += parseStatement(tokens, &i, outNodes + nodec);
 	}
+	dynList_resize((void**)&outNodes, nodec);
 	return outNodes;
 }
 
