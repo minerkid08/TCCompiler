@@ -65,9 +65,9 @@ int main(int argc, const char** argv)
 	Token* tokens = tokenize(argv[1]);
 
 	StatementNode* nodes = parse(tokens);
-  //Buffer* buf = genCode(nodes);
-  //printf("%s", buf->data);
-  printNodes(nodes, "");
+  Buffer* buf = genCode(nodes);
+  printf("%s", buf->data);
+  //printNodes(nodes, "");
 }
 /*
 #define FUNCTION_ASM (1 << 0)
