@@ -1,0 +1,3 @@
+clear
+../build compiler
+compiler/bin/compiler test2.lua
