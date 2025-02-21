@@ -1,6 +1,6 @@
 #include "tokenizer.h"
 #include "dynList.h"
-#include "token.h"
+#include "../token.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>

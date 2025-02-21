@@ -17,3 +17,5 @@ typedef struct {
   int type;
   void *data;
 } Token;
+
+const char* tokenTypeToStr(int type);
