@@ -1,5 +1,5 @@
 #pragma once
 
-#include "token.h"
+#include "../token.h"
 
 Token* tokenize(const char* filename);

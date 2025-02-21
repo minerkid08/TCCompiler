@@ -1,11 +1,72 @@
-#include "buffer.h"
 #include "dynList.h"
+#include "parser/parseNodes.h"
+#include "parser/parser.h"
 #include "token.h"
-#include "tokenizer.h"
+#include "tokenizer/tokenizer.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
+void printExpr(const ExprNode* expr, const char* indent)
+{
+	int len = dynList_size(expr);
+	for (int i = 0; i < len; i++)
+	{
+		const ExprNode* node = expr + i;
+		switch (node->type)
+		{
+		case ExprTypeExpr:
+			break;
+		case ExprTypeVar:
+			printf("%s  var: %s\n", indent, node->var.name);
+			break;
+		case ExprTypeNum:
+			printf("%s  num: %d\n", indent, node->num.val);
+			break;
+		case ExprTypeOpr:
+			printf("%s  opr: %c\n", indent, node->opr.opr);
+			break;
+		}
+	}
+}
+
+void printNodes(StatementNode* nodes, const char* indent)
+{
+	int len = dynList_size(nodes);
+	for (int i = 0; i < len; i++)
+	{
+		StatementNode* node = nodes + i;
+		switch (node->type)
+		{
+		case StatementTypeFunc:
+			printf("%sfunction decl, %s, %d, %d\n", indent, node->func.name, node->func.type, node->func.argc);
+      if((node->func.type & 4) == 0)
+        printNodes(node->func.statements, "  ");
+			break;
+		case StatementTypeFunCall:
+			printf("%sfunction call, %s, %d\n", indent, node->funCall.name, node->funCall.argc);
+			break;
+		case StatementTypeVarDef:
+			printf("%svar decl, %s\n", indent, node->varDef.name);
+      if(node->varDef.expr)
+        printExpr(node->varDef.expr, indent);
+			break;
+		}
+	}
+}
+
+int main(int argc, const char** argv)
+{
+	if (argc == 0)
+	{
+		printf("more args pls\n");
+		return 1;
+	}
+
+	Token* tokens = tokenize(argv[1]);
+
+	StatementNode* nodes = parse(tokens);
+  printNodes(nodes, "");
+}
+/*
 #define FUNCTION_ASM (1 << 0)
 #define FUNCTION_INLINE (1 << 1)
 
@@ -370,4 +431,4 @@ int main(int argc, const char** argv)
 	printf("%s", out.data);
 
 	return 0;
-}
+}*/

@@ -1,5 +1,9 @@
 #pragma once
 
+#define Func_Inline 1
+#define Func_Asm 2
+#define Func_ForwardDecl 4
+
 typedef struct StatementNode StatementNode;
 typedef struct ExprNode ExprNode;
 
@@ -20,7 +24,8 @@ typedef struct
 typedef struct
 {
   const char* name;
-  ExprNode* argExprs;
+  int argc;
+  ExprNode** argExprs;
 } StatementNodeFunCall;
 
 typedef struct
