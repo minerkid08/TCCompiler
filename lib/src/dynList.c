@@ -1,5 +1,6 @@
 #include "dynList.h"
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 typedef struct
@@ -13,20 +14,11 @@ typedef struct
 
 void* dynList_new(int size, int elemSize)
 {
-	char zero = 0;
-	if (size == 0)
-	{
-		size = 5;
-		zero = 1;
-	}
 	int sizeBytes = sizeof(DynamicListHeader) + elemSize * size;
 	DynamicListHeader* header = malloc(sizeBytes);
 	assert(header);
 	header->elemSize = elemSize;
-	if (zero)
-		header->size = 0;
-	else
-		header->size = size;
+	header->size = size;
 	header->capacity = size;
 	return header + 1;
 }
@@ -43,7 +35,13 @@ void dynList_resize(void** list2, int newSize)
 	}
 	int sizeBytes = sizeof(DynamicListHeader) + header->elemSize * newSize;
 	DynamicListHeader* newList = realloc(header, sizeBytes);
-	assert(newList);
+	if (newList == 0)
+	{
+    int oldSize = sizeof(DynamicListHeader) + header->elemSize * header->capacity;
+		printf("failed reallocating %d(%d) to %d(%d) bytes\n", oldSize, header->capacity, sizeBytes, newSize);
+		fflush(stdout);
+		assert(0);
+	}
 	newList->capacity = newSize;
 	newList->size = newSize;
 	*list2 = newList + 1;

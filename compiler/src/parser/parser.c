@@ -257,16 +257,18 @@ ExprNode* parseExpression(const Token* tokens, int* i, int* endTypes, int endTyp
 			exprNode->type = ExprTypeNum;
 			exprNode->num.val = atoi(token->data);
 		}
-		if (token->type == TOKEN_LITERAL)
+		else if (token->type == TOKEN_LITERAL)
 		{
 			exprNode->type = ExprTypeVar;
 			exprNode->var.name = token->data;
 		}
-		if (token->type == TOKEN_OPERATOR)
+		else if (token->type == TOKEN_OPERATOR)
 		{
 			exprNode->type = ExprTypeOpr;
 			exprNode->opr.opr = ((char*)token->data)[0];
 		}
+		else
+			err("invalid token in expression\n");
 	}
 	return 0;
 }

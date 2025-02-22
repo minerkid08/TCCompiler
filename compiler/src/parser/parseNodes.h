@@ -7,38 +7,48 @@
 typedef struct StatementNode StatementNode;
 typedef struct ExprNode ExprNode;
 
+typedef struct StatementNodeFunc StatementNodeFunc;
+typedef struct StatementNodeFunCall StatementNodeFunCall;
+typedef struct StatementNodeVarDef StatementNodeVarDef;
+typedef struct StatementNodeVarAssign StatementNodeVarAssign;
+
+typedef struct ExprNodeOpr ExprNodeOpr;
+typedef struct ExprNodeVar ExprNodeVar;
+typedef struct ExprNodeNum ExprNodeNum;
+typedef struct ExprNodeExpr ExprNodeExpr;
+
 #define StatementTypeFunc 0
 #define StatementTypeFunCall 1
 #define StatementTypeVarDef 2
 #define StatementTypeVarAssign 3
 
-typedef struct 
+struct StatementNodeFunc
 {
   const char* name;
   int type;
   int argc;
   const char** argNames;
   StatementNode* statements;
-} StatementNodeFunc;
+};
 
-typedef struct
+struct StatementNodeFunCall
 {
   const char* name;
   int argc;
   ExprNode** argExprs;
-} StatementNodeFunCall;
+};
 
-typedef struct
+struct StatementNodeVarDef
 {
   const char* name;
   ExprNode* expr;
-} StatementNodeVarDef;
+};
 
-typedef struct
+struct StatementNodeVarAssign
 {
   const char* name;
   ExprNode* expr;
-} StatementNodeVarAssign;
+};
 
 struct StatementNode
 {
@@ -57,25 +67,25 @@ struct StatementNode
 #define ExprTypeNum 2
 #define ExprTypeOpr 3
 
-typedef struct
+struct ExprNodeExpr
 {
   ExprNode* expr;
-} ExprNodeExpr;
+};
 
-typedef struct
+struct ExprNodeVar
 {
   const char* name;
-} ExprNodeVar;
+};
 
-typedef struct
+struct ExprNodeNum
 {
   int val;
-} ExprNodeNum;
+};
 
-typedef struct
+struct ExprNodeOpr
 {
   char opr;
-} ExprNodeOpr;
+};
 
 struct ExprNode
 {
