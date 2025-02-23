@@ -240,7 +240,7 @@ ExprNode* parseExpression(const Token* tokens, int* i, int* endTypes, int endTyp
 {
 	const Token* token;
 	int size = 0;
-	ExprNode* outNodes = dynList_new(0, sizeof(ExprNode*));
+	ExprNode* outNodes = dynList_newX(0, 5, sizeof(ExprNode*));
 	while (1)
 	{
 		token = consumeToken();
@@ -249,9 +249,9 @@ ExprNode* parseExpression(const Token* tokens, int* i, int* endTypes, int endTyp
 			if (token->type == endTypes[j])
 				return outNodes;
 		}
+		dynList_resize((void**)&outNodes, size + 1);
+		ExprNode* exprNode = outNodes + size;
 		size++;
-		dynList_resize((void**)&outNodes, size);
-		ExprNode* exprNode = outNodes + (size - 1);
 		if (token->type == TOKEN_NUMBER)
 		{
 			exprNode->type = ExprTypeNum;

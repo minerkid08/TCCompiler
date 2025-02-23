@@ -23,6 +23,17 @@ void* dynList_new(int size, int elemSize)
 	return header + 1;
 }
 
+void* dynList_newX(int size, int capacity, int elemSize)
+{
+	int sizeBytes = sizeof(DynamicListHeader) + elemSize * capacity;
+	DynamicListHeader* header = malloc(sizeBytes);
+	assert(header);
+	header->elemSize = elemSize;
+	header->size = size;
+	header->capacity = capacity;
+	return header + 1;
+}
+
 void dynList_resize(void** list2, int newSize)
 {
 	void* list = *list2;

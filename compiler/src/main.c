@@ -101,7 +101,7 @@ int main(int argc, const char** argv)
 	const char* filename = argv[1];
 	if (argc == 1)
 	{
-		filename = "test2.lua";
+		filename = "test.lua";
 	}
 
 	Token* tokens = tokenize(filename);
@@ -112,10 +112,10 @@ int main(int argc, const char** argv)
 	int len = dynList_size(nodes->varDef.expr);
 	printf("processing expression\n");
 	fflush(stdout);
-	const ExprNode** stack1 = dynList_new(0, sizeof(ExprNode*));
+	const ExprNode** stack1 = dynList_newX(0, 10, sizeof(ExprNode*));
 	printf("processing expression\n");
 	fflush(stdout);
-	const ExprNode** stack2 = dynList_new(0, sizeof(ExprNode*));
+	const ExprNode** stack2 = dynList_newX(0, 10, sizeof(ExprNode*));
 	printf("processing expression\n");
 	fflush(stdout);
 
