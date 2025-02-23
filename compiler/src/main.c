@@ -10,35 +10,14 @@
 void printExpr(const ExprNode* expr, const char* indent)
 {
 	int len = dynList_size(expr);
+	printf("expr len: %d\n", len);
 	for (int i = 0; i < len; i++)
 	{
 		const ExprNode* node = expr + i;
 		switch (node->type)
 		{
 		case ExprTypeExpr:
-			break;
-		case ExprTypeVar:
-			printf("%s  var: %s\n", indent, node->var.name);
-			break;
-		case ExprTypeNum:
-			printf("%s  num: %d\n", indent, node->num.val);
-			break;
-		case ExprTypeOpr:
-			printf("%s  opr: %c\n", indent, node->opr.opr);
-			break;
-		}
-	}
-}
-
-void printExpr2(const ExprNode** expr, const char* indent)
-{
-	int len = dynList_size(expr);
-	for (int i = 0; i < len; i++)
-	{
-		const ExprNode* node = expr[i];
-		switch (node->type)
-		{
-		case ExprTypeExpr:
+			printf("%s  expr: ?\n", indent);
 			break;
 		case ExprTypeVar:
 			printf("%s  var: %s\n", indent, node->var.name);
@@ -78,23 +57,6 @@ void printNodes(StatementNode* nodes, const char* indent)
 	}
 }
 
-int getPrec(char c)
-{
-	switch (c)
-	{
-	case '+':
-		return 2;
-	case '-':
-		return 1;
-	case '*':
-		return 4;
-	case '/':
-		return 3;
-	}
-	printf("invalid operator '%c'\n", c);
-	exit(1);
-	return -1;
-}
 
 int main(int argc, const char** argv)
 {
@@ -102,68 +64,12 @@ int main(int argc, const char** argv)
 	if (argc == 1)
 	{
 		printf("more args pls\n");
-		filename = "test2.lua";
+		filename = "test.lua";
 	}
 
 	Token* tokens = tokenize(filename);
 
 	StatementNode* nodes = parse(tokens);
-	//Buffer* buf = genCode(nodes);
-	//printf("%s", buf->data);
-	printNodes(nodes, "");
-	int len = dynList_size(nodes->varDef.expr);
-	printf("processing expression\n");
-	fflush(stdout);
-	const ExprNode** stack1 = dynList_new(0, sizeof(ExprNode*));
-	printf("processing expression\n");
-	fflush(stdout);
-	const ExprNode** stack2 = dynList_new(0, sizeof(ExprNode*));
-	printf("processing expression\n");
-	fflush(stdout);
-
-	for (int i = 0; i < len; i++)
-	{
-		const ExprNode* node = nodes->varDef.expr + i;
-		if (node->type == ExprTypeOpr)
-		{
-			int l = dynList_size(stack1);
-			if (l)
-			{
-				int prec = getPrec(node->opr.opr);
-				while (l)
-				{
-					const ExprNode* prev = stack1[--l];
-					if (prec < getPrec(prev->opr.opr))
-					{
-						dynList_resize((void**)&stack1, l);
-						int l2 = dynList_size(stack2);
-						dynList_resize((void**)&stack2, l2 + 1);
-						stack2[l2] = prev;
-					}
-					else
-						break;
-				}
-			}
-			l = dynList_size(stack1);
-			dynList_resize((void**)&stack1, l + 1);
-			stack1[l] = node;
-		}
-		else
-		{
-			int l = dynList_size(stack2);
-			dynList_resize((void**)&stack2, l + 1);
-			stack2[l] = node;
-		}
-	}
-
-	len = dynList_size(stack1);
-	for (int i = 0; i < len; i++)
-	{
-		const ExprNode* node = stack1[i];
-		int l = dynList_size(stack2);
-		dynList_resize((void**)&stack2, l + 1);
-		stack2[l] = node;
-	}
-
-	printExpr2(stack2, "  ");
+	Buffer* buf = genCode(nodes);
+	printf("%s", buf->data);
 }

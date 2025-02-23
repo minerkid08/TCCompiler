@@ -70,6 +70,7 @@ void dynList_free(void* list)
 
 int dynList_size(const void* list)
 {
+  assert(list);
 	const DynamicListHeader* header = dynList_header(list);
 	return header->size;
 }

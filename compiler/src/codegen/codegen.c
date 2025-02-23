@@ -1,19 +1,35 @@
 #include "codegen.h"
 #include "buffer.h"
+#include "codegenExpr.h"
 #include "dynList.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define err(args...)                                                                                                   \
-	{                                                                                                                  \
-		printf(args);                                                                                                  \
-		exit(1);                                                                                                       \
-	}
+#include "../utils.h"
 
 const char** vars;
 int* scopeVarCounts;
 StatementNodeFunc* functions;
+
+void pushFunction(const StatementNodeFunc* func)
+{
+	int len = dynList_size(functions);
+	for (int i = 0; i < len; i++)
+	{
+		StatementNodeFunc* func2 = functions + i;
+		if (strcmp(func2->name, func->name) == 0)
+		{
+			if (func2->argc != func->argc)
+				err("attempted to redefine '%s' with a different signature\n", func->name);
+			return;
+		}
+	}
+	dynList_resize((void**)&functions, len + 1);
+	StatementNodeFunc* func2 = functions + len;
+	func2->type = func->type & 3;
+	func2->name = func->name;
+	func2->argc = func->argc;
+}
 
 void pushScope(Buffer* buf)
 {
@@ -63,17 +79,6 @@ void loadVar(Buffer* buf, int reg, const char* name)
 		bufferWrite(buf, "sub r%d, sp, %d\nload r%d, [r%d] ; %s\n", reg, (len - idx - 1) * 2, reg, reg, name);
 }
 
-void genExpr(Buffer* buf, int reg, const ExprNode* expr)
-{
-	int len = dynList_size(expr);
-	if (len > 1)
-		err("currently expressions can only have one token\n");
-	if (expr->type == ExprTypeNum)
-		bufferWrite(buf, "mov r%d, %d\n", reg, expr->num.val);
-	else
-		loadVar(buf, reg, expr->var.name);
-}
-
 void genStatement(Buffer* buf, const StatementNode* node)
 {
 	switch (node->type)
@@ -92,6 +97,21 @@ void genStatement(Buffer* buf, const StatementNode* node)
 	}
 	case StatementTypeFunCall: {
 		const StatementNodeFunCall* funCall = &node->funCall;
+		int funLen = dynList_size(functions);
+		char exists = 0;
+		for (int i = 0; i < funLen; i++)
+		{
+      const StatementNodeFunc* func = functions + i;
+			if (strcmp(func->name, funCall->name) == 0)
+			{
+        if(func->argc != funCall->argc)
+          err("attempted to call '%s' with an incorrect number of args\n", funCall->name);
+				exists = 1;
+				break;
+			}
+		}
+		if (!exists)
+			err("attempted to call '%s' without it existing\n", funCall->name);
 		for (int j = 0; j < funCall->argc; j++)
 		{
 			genExpr(buf, j + 1, funCall->argExprs[j]);
@@ -118,15 +138,19 @@ Buffer* genCode(const StatementNode* statements)
 		if (node->type == StatementTypeFunc)
 		{
 			const StatementNodeFunc* func = &node->func;
-			bufferWrite(buf, "%s:\n", func->name);
-			pushScope(buf);
-			for (int j = 0; j < func->argc; j++)
-				bufferWrite(buf, "push r%d ; %s\n", j + 1, func->argNames[j]);
-			int len = dynList_size(func->statements);
-			for (int i = 0; i < len; i++)
-				genStatement(buf, func->statements + i);
-			popScope(buf);
-			bufferWrite(buf, "ret ; %s\n", func->name);
+			pushFunction(func);
+			if (!(func->type & Func_ForwardDecl))
+			{
+				bufferWrite(buf, "%s:\n", func->name);
+				pushScope(buf);
+				for (int j = 0; j < func->argc; j++)
+					bufferWrite(buf, "push r%d ; %s\n", j + 1, func->argNames[j]);
+				int len = dynList_size(func->statements);
+				for (int i = 0; i < len; i++)
+					genStatement(buf, func->statements + i);
+				popScope(buf);
+				bufferWrite(buf, "ret ; %s\n", func->name);
+			}
 		}
 	}
 

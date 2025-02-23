@@ -1,8 +1,7 @@
 #include "../token.h"
+#include "../utils.h"
 #include "dynList.h"
 #include "parseNodes.h"
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 int parseStatement(const Token* tokens, int* i, StatementNode* destNode);
@@ -13,11 +12,6 @@ void parseVarDecl(const Token* tokens, int* i, StatementNode* destNode);
 ExprNode* parseExpression(const Token* tokens, int* i, int* endTypes, int endTypesLen);
 
 #define consumeToken() (tokens + ++(*i))
-#define err(args...)                                                                                                   \
-	{                                                                                                                  \
-		printf(args);                                                                                                  \
-		exit(1);                                                                                                       \
-	}
 
 StatementNode* parse(const Token* tokens)
 {
@@ -250,9 +244,8 @@ ExprNode* parseExpression(const Token* tokens, int* i, int* endTypes, int endTyp
 			if (token->type == endTypes[j])
 				return outNodes;
 		}
-		size++;
-		dynList_resize((void**)&outNodes, size);
-		ExprNode* exprNode = dynList_get(outNodes, size - 1);
+		dynList_resize((void**)&outNodes, size + 1);
+		ExprNode* exprNode = outNodes + size;
 		if (token->type == TOKEN_NUMBER)
 		{
 			exprNode->type = ExprTypeNum;
@@ -266,8 +259,9 @@ ExprNode* parseExpression(const Token* tokens, int* i, int* endTypes, int endTyp
 		if (token->type == TOKEN_OPERATOR)
 		{
 			exprNode->type = ExprTypeOpr;
-			exprNode->opr.opr = ((char*)token->data)[0];
+			exprNode->opr.opr = token->data[0];
 		}
+		size++;
 	}
 	return 0;
 }
