@@ -140,7 +140,7 @@ void parseFunction(const Token* tokens, int* i, StatementNode* destNode)
 		while (1)
 		{
 			dynList_resize((void**)&fun->statements, nodec + 1);
-			StatementNode* node = fun->statements + nodec;
+			StatementNode* node = dynList_get(fun->statements, nodec);
 			token = consumeToken();
 			if (token->type == TOKEN_KEYWORD)
 			{
@@ -241,6 +241,7 @@ ExprNode* parseExpression(const Token* tokens, int* i, int* endTypes, int endTyp
 	const Token* token;
 	int size = 0;
 	ExprNode* outNodes = dynList_new(0, sizeof(ExprNode*));
+  dynList_reserve((void**)&outNodes, 10);
 	while (1)
 	{
 		token = consumeToken();
@@ -251,7 +252,7 @@ ExprNode* parseExpression(const Token* tokens, int* i, int* endTypes, int endTyp
 		}
 		size++;
 		dynList_resize((void**)&outNodes, size);
-		ExprNode* exprNode = outNodes + (size - 1);
+		ExprNode* exprNode = dynList_get(outNodes, size - 1);
 		if (token->type == TOKEN_NUMBER)
 		{
 			exprNode->type = ExprTypeNum;

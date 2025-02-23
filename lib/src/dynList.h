@@ -6,3 +6,4 @@ void dynList_reserve(void** list, int newCapacity);
 void dynList_free(void* list);
 int dynList_size(const void* list);
 int dynList_capacity(const void* list);
+void* dynList_get(void* list, int i);

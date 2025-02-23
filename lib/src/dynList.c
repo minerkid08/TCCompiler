@@ -41,12 +41,10 @@ void dynList_resize(void** list2, int newSize)
 		header->size = newSize;
 		return;
 	}
-	int sizeBytes = sizeof(DynamicListHeader) + header->elemSize * newSize;
-	DynamicListHeader* newList = realloc(header, sizeBytes);
-	assert(newList);
-	newList->capacity = newSize;
-	newList->size = newSize;
-	*list2 = newList + 1;
+  dynList_reserve(list2, header->capacity * 2);
+  list = *list2;
+  header = dynList_header(list);
+	header->size = newSize;
 }
 
 void dynList_reserve(void** list2, int newCapacity)
@@ -80,4 +78,12 @@ int dynList_capacity(const void* list)
 {
 	const DynamicListHeader* header = dynList_header(list);
 	return header->capacity;
+}
+
+void* dynList_get(void* list, int i)
+{
+	const DynamicListHeader* header = dynList_header(list);
+  assert(i >= 0);
+  assert(i < header->size);
+	return list + (header->elemSize * i);
 }
