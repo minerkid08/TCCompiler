@@ -12,6 +12,7 @@ typedef struct ExprNode ExprNode;
 #define StatementTypeVarDef 2
 #define StatementTypeVarAssign 3
 #define StatementTypeIf 4
+#define StatementTypeReturn 5
 
 typedef struct 
 {
@@ -27,6 +28,7 @@ typedef struct
   const char* name;
   int argc;
   ExprNode** argExprs;
+  const char* rtnVar;
 } StatementNodeFunCall;
 
 typedef struct
@@ -47,6 +49,11 @@ typedef struct
   StatementNode* statments;
 } StatementNodeIf;
 
+typedef struct
+{
+  ExprNode* expr;
+} StatementNodeReturn;
+
 struct StatementNode
 {
   int type;
@@ -57,6 +64,7 @@ struct StatementNode
     StatementNodeVarDef varDef;
     StatementNodeVarAssign varAssing;
     StatementNodeIf condIf;
+    StatementNodeReturn ret;
   };
 };
 

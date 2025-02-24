@@ -5,11 +5,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "parser/parseNodes.h"
 #include "utils.h"
 
 const char** vars;
 int* scopeVarCounts;
 StatementNodeFunc* functions;
+
+const char* funName;
+int ifc;
 
 void pushFunction(const StatementNodeFunc* func)
 {
@@ -35,8 +39,13 @@ void pushScope(Buffer* buf)
 {
 	int scopec = dynList_size(scopeVarCounts);
 	dynList_resize((void**)&scopeVarCounts, scopec + 1);
-	scopeVarCounts[scopec] = 0;
+	scopeVarCounts[scopec] = 2;
 	bufferWrite(buf, "push r13\nmov r13, sp\n");
+
+	int varc = dynList_size(vars);
+	dynList_resize((void**)&vars, varc + 2);
+	vars[varc] = 0;
+	vars[varc + 1] = 0;
 }
 
 void pushVar(const char* name)
@@ -62,6 +71,8 @@ int getVar(const char* name)
 	int len = dynList_size(vars);
 	for (int i = 0; i < len; i++)
 	{
+		if (vars[i] == 0)
+			continue;
 		if (strcmp(vars[i], name) == 0)
 			return i;
 	}
@@ -76,7 +87,17 @@ void loadVar(Buffer* buf, int reg, const char* name)
 	if (idx == len - 1)
 		bufferWrite(buf, "load r%d, [sp] ; %s\n", reg, name);
 	else
-		bufferWrite(buf, "sub r%d, sp, %d\nload r%d, [r%d] ; %s\n", reg, (len - idx - 1) * 2, reg, reg, name);
+		bufferWrite(buf, "add r%d, sp, %d\nload r%d, [r%d] ; %s\n", reg, (len - idx - 1) * 2, reg, reg, name);
+}
+
+void setVar(Buffer* buf, int reg, const char* name)
+{
+	int idx = getVar(name);
+	int len = dynList_size(vars);
+	if (idx == len - 1)
+		bufferWrite(buf, "store [sp], r%d ; %s\n", reg, name);
+	else
+		bufferWrite(buf, "add r%d, sp, %d\nstore [r%d], r%d ; %s\n", reg, (len - idx - 1) * 2, reg, reg, name);
 }
 
 void genStatement(Buffer* buf, const StatementNode* node)
@@ -101,11 +122,11 @@ void genStatement(Buffer* buf, const StatementNode* node)
 		char exists = 0;
 		for (int i = 0; i < funLen; i++)
 		{
-      const StatementNodeFunc* func = functions + i;
+			const StatementNodeFunc* func = functions + i;
 			if (strcmp(func->name, funCall->name) == 0)
 			{
-        if(func->argc != funCall->argc)
-          err("attempted to call '%s' with an incorrect number of args\n", funCall->name);
+				if (func->argc != funCall->argc)
+					err("attempted to call '%s' with an incorrect number of args\n", funCall->name);
 				exists = 1;
 				break;
 			}
@@ -117,6 +138,34 @@ void genStatement(Buffer* buf, const StatementNode* node)
 			genExpr(buf, j + 1, funCall->argExprs[j]);
 		}
 		bufferWrite(buf, "call %s\n", funCall->name);
+		if (funCall->rtnVar)
+			setVar(buf, 1, funCall->rtnVar);
+		break;
+	}
+	case StatementTypeIf: {
+		const StatementNodeIf* condIf = &node->condIf;
+		genExpr(buf, 1, condIf->expr);
+		bufferWrite(buf, "cmp r1, 0\nje %sIf%d\n", funName, ifc);
+		pushScope(buf);
+		int len = dynList_size(condIf->statments);
+		for (int i = 0; i < len; i++)
+			genStatement(buf, condIf->statments + i);
+		popScope(buf);
+		bufferWrite(buf, "%sIf%d:\n", funName, ifc);
+		ifc++;
+		break;
+	}
+	case StatementTypeReturn: {
+		if (node->ret.expr)
+		{
+			genExpr(buf, 1, node->ret.expr);
+		}
+		int len = dynList_size(scopeVarCounts);
+		for (int i = 0; i < len; i++)
+		{
+			bufferWrite(buf, "mov sp, r13\npop r13\n");
+		}
+		bufferWrite(buf, "ret\n");
 		break;
 	}
 	}
@@ -141,6 +190,8 @@ Buffer* genCode(const StatementNode* statements)
 			pushFunction(func);
 			if (!(func->type & Func_ForwardDecl))
 			{
+				funName = func->name;
+				ifc = 0;
 				bufferWrite(buf, "%s:\n", func->name);
 				pushScope(buf);
 				for (int j = 0; j < func->argc; j++)

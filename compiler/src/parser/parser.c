@@ -9,6 +9,7 @@ void parseFunction(const Token* tokens, int* i, StatementNode* destNode);
 void parseFunctionCall(const Token* tokens, int* i, StatementNode* destNode);
 void parseVarDecl(const Token* tokens, int* i, StatementNode* destNode);
 void parseIf(const Token* tokens, int* i, StatementNode* destNode);
+void parseReturn(const Token* tokens, int* i, StatementNode* destNode);
 
 ExprNode* parseExpression(const Token* tokens, int* i, int* endTypes, int endTypesLen);
 
@@ -163,6 +164,8 @@ int parseStatement(const Token* tokens, int* i, StatementNode* destNode)
 			parseVarDecl(tokens, i, destNode);
 		else if (strcmp(token->data, "if") == 0)
 			parseIf(tokens, i, destNode);
+		else if (strcmp(token->data, "return") == 0)
+			parseReturn(tokens, i, destNode);
 		else
 			err("unexpected keyword '%s'\n", token->data);
 		return 1;
@@ -232,7 +235,18 @@ void parseFunctionCall(const Token* tokens, int* i, StatementNode* destNode)
 				break;
 		}
 	}
+	funCall->rtnVar = 0;
 	token = consumeToken();
+	if (token->type == TOKEN_OPERATOR)
+	{
+		if (token->data[0] != OPERATOR_RTN)
+			err("invalid operator after function call\n");
+		token = consumeToken();
+		if (token->type != TOKEN_LITERAL)
+			err("expected literal after return operator\n");
+		funCall->rtnVar = token->data;
+		token = consumeToken();
+	}
 	if (token->type != TOKEN_SEMICOLON)
 		err("expected semicolon after function call\n");
 }
@@ -304,4 +318,16 @@ void parseIf(const Token* tokens, int* i, StatementNode* destNode)
 		StatementNode* node = statements + nodec;
 		nodec += parseStatement(tokens, i, node);
 	}
+}
+
+void parseReturn(const Token* tokens, int* i, StatementNode* destNode)
+{
+	destNode->type = StatementTypeReturn;
+	destNode->ret.expr = 0;
+	const Token* token = consumeToken();
+	if (token->type == TOKEN_SEMICOLON)
+		return;
+	int endTypes[] = {TOKEN_SEMICOLON};
+	(*i)--;
+	destNode->ret.expr = parseExpression(tokens, i, endTypes, 1);
 }

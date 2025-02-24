@@ -16,6 +16,7 @@
 #define OPERATOR_OR '|'
 #define OPERATOR_XOR '^'
 #define OPERATOR_ASSIGN '\5'
+#define OPERATOR_RTN '\6'
 
 #define TOKEN_LITERAL 0
 #define TOKEN_NUMBER 1

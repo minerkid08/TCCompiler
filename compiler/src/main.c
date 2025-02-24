@@ -5,6 +5,7 @@
 #include "token.h"
 #include "tokenizer/tokenizer.h"
 #include <stdio.h>
+#include <string.h>
 
 void printExpr(const ExprNode* expr, const char* indent)
 {
@@ -64,10 +65,16 @@ void printNodes(StatementNode* nodes, const char* indent)
 int main(int argc, const char** argv)
 {
 	const char* filename = argv[1];
-	if (argc == 1)
+	const char* outFilename = argv[2];
+	if (argc < 2)
 	{
 		printf("more args pls\n");
 		filename = "test.lua";
+	}
+	if (argc < 3)
+	{
+		printf("even more args pls\n");
+		outFilename = "out.asm";
 	}
 
   Token* tokens = tokenize(filename);
@@ -80,8 +87,11 @@ int main(int argc, const char** argv)
   
 	StatementNode* nodes = parse(tokens);
 
-	printNodes(nodes, "");
+	//printNodes(nodes, "");
 
-	// Buffer* buf = genCode(nodes);
-	// printf("%s", buf->data);
+	Buffer* buf = genCode(nodes);
+
+  FILE* outFile = fopen(outFilename, "wb");
+  fprintf(outFile, "%s", buf->data);
+  fclose(outFile);
 }

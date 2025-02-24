@@ -10,6 +10,9 @@
 
 #define ExprTypeTmpVar 4
 
+extern const char* funName;
+extern int ifc;
+
 void printStack(const ExprNode** expr, const char* indent)
 {
 	int len = dynList_size(expr);
@@ -37,15 +40,39 @@ int getPrec(char c)
 	switch (c)
 	{
 	case OPERATOR_ADD:
-		return 2;
-	case OPERATOR_SUB:
-		return 1;
-	case OPERATOR_MUL:
-		return 4;
-	case OPERATOR_DIV:
 		return 3;
+	case OPERATOR_SUB:
+		return 2;
+	case OPERATOR_MUL:
+		return 5;
+	case OPERATOR_DIV:
+		return 4;
+	case OPERATOR_SHL:
+		return 1;
+	case OPERATOR_SHR:
+		return 1;
+	case OPERATOR_AND:
+		return 0;
+	case OPERATOR_OR:
+		return 0;
+	case OPERATOR_XOR:
+		return 0;
+
+	case OPERATOR_EQ:
+		return -1;
+	case OPERATOR_NEQ:
+		return -1;
+	case OPERATOR_LT:
+		return -1;
+	case OPERATOR_GT:
+		return -1;
+	case OPERATOR_LTE:
+		return -1;
+	case OPERATOR_GTE:
+		return -1;
 	}
 	printf("invalid operator '%c'\n", c);
+	fflush(stdout);
 	exit(1);
 	return -1;
 }
@@ -139,6 +166,39 @@ void genExpr(Buffer* buf, int reg, const ExprNode* expr)
 				case OPERATOR_DIV:
 					res->num.val = a1->num.val / a2->num.val;
 					break;
+				case OPERATOR_SHL:
+					res->num.val = a1->num.val << a2->num.val;
+					break;
+				case OPERATOR_SHR:
+					res->num.val = a1->num.val >> a2->num.val;
+					break;
+				case OPERATOR_AND:
+					res->num.val = a1->num.val & a2->num.val;
+					break;
+				case OPERATOR_OR:
+					res->num.val = a1->num.val | a2->num.val;
+					break;
+				case OPERATOR_XOR:
+					res->num.val = a1->num.val ^ a2->num.val;
+					break;
+				case OPERATOR_EQ:
+					res->num.val = a1->num.val == a2->num.val;
+					break;
+				case OPERATOR_NEQ:
+					res->num.val = a1->num.val != a2->num.val;
+					break;
+				case OPERATOR_LT:
+					res->num.val = a1->num.val < a2->num.val;
+					break;
+				case OPERATOR_GT:
+					res->num.val = a1->num.val > a2->num.val;
+					break;
+				case OPERATOR_LTE:
+					res->num.val = a1->num.val <= a2->num.val;
+					break;
+				case OPERATOR_GTE:
+					res->num.val = a1->num.val >= a2->num.val;
+					break;
 				}
 			}
 			else
@@ -164,25 +224,77 @@ void genExpr(Buffer* buf, int reg, const ExprNode* expr)
 				else
 					bufferWrite(buf, "sub r%d, sp, %d\nload r%d, [r%d]\n", reg + 1, a1->num.val * 2, reg + 1, reg + 1);
 
-				const char* opr;
-
-				switch (node->opr.opr)
+				if (getPrec(node->opr.opr) > -1)
 				{
-				case OPERATOR_ADD:
-					opr = "add";
-					break;
-				case OPERATOR_SUB:
-					opr = "sub";
-					break;
-				case OPERATOR_MUL:
-					err("multiplying is not supported\n");
-					break;
-				case OPERATOR_DIV:
-					err("division is not supported\n");
-					break;
+					const char* opr;
+
+					switch (node->opr.opr)
+					{
+					case OPERATOR_ADD:
+						opr = "add";
+						break;
+					case OPERATOR_SUB:
+						opr = "sub";
+						break;
+					case OPERATOR_MUL:
+						err("multiplying is not supported\n");
+						break;
+					case OPERATOR_DIV:
+						err("division is not supported\n");
+						break;
+					case OPERATOR_SHL:
+						opr = "shl";
+						break;
+					case OPERATOR_SHR:
+						opr = "shr";
+						break;
+					case OPERATOR_AND:
+						opr = "and";
+						break;
+					case OPERATOR_OR:
+						opr = "or";
+						break;
+					case OPERATOR_XOR:
+						opr = "xor";
+						break;
+					}
+					bufferWrite(buf, "%s r%d, r%d, %s\nsub r%d, sp, %d\nstore [r%d], r%d\n", opr, reg, reg, a2Str,
+								reg + 1, tempVarCount * 2, reg + 1, reg);
 				}
-				bufferWrite(buf, "%s r%d, r%d, %s\nsub r%d, sp, %d\nstore [r%d], r%d\n", opr, reg, reg, a2Str, reg + 1,
-							tempVarCount * 2, reg + 1, reg);
+				else
+				{
+					const char* opr;
+
+					switch (node->opr.opr)
+					{
+					case OPERATOR_EQ:
+						opr = "je";
+						break;
+					case OPERATOR_NEQ:
+						opr = "jne";
+						break;
+					case OPERATOR_LT:
+						opr = "jl";
+						break;
+					case OPERATOR_GT:
+						opr = "jg";
+						break;
+					case OPERATOR_LTE:
+						opr = "jle";
+						break;
+					case OPERATOR_GTE:
+						opr = "jge";
+						break;
+					}
+
+					bufferWrite(buf, "cmp r%d, %s\n", reg, a2Str);
+					bufferWrite(buf, "mov r%d, 1\n", reg);
+					bufferWrite(buf, "%s %sCmp%d\n", opr, funName, ifc);
+					bufferWrite(buf, "mov r%d, 0\n", reg);
+					bufferWrite(buf, "%sCmp%d:\n", funName, ifc);
+					ifc++;
+					bufferWrite(buf, "sub r%d, sp, %d\nstore [r%d], r%d\n", reg + 1, tempVarCount * 2, reg + 1, reg);
+				}
 			}
 			stack1[l2 - 2] = res;
 			dynList_resize((void**)&stack1, l2 - 1);

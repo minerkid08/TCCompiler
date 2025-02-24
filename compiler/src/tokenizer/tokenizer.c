@@ -11,11 +11,11 @@ const char* keywords[] = {"function", "return", "end",	 "if",		"else", "then", "
 
 const char operatorChars[] = {'+', '-', '*', '/', '=', '!', '<', '>', '^'};
 
-const char* operators[] = {"+", "-", "*", "/", "=", "==", "!=", "<", ">", "<=", ">=", "<<", ">>", "&", "|", "^"};
+const char* operators[] = {"+", "-", "*", "/", "=", "==", "!=", "<", ">", "<=", ">=", "<<", ">>", "&", "|", "^", "->"};
 
 const char operatorConsts[] = {OPERATOR_ADD, OPERATOR_SUB, OPERATOR_MUL, OPERATOR_DIV, OPERATOR_ASSIGN, OPERATOR_EQ,
 							   OPERATOR_NEQ, OPERATOR_LT,  OPERATOR_GT,	 OPERATOR_LTE, OPERATOR_GTE,	OPERATOR_SHL,
-							   OPERATOR_SHR, OPERATOR_AND, OPERATOR_OR,	 OPERATOR_XOR};
+							   OPERATOR_SHR, OPERATOR_AND, OPERATOR_OR,	 OPERATOR_XOR, OPERATOR_RTN};
 
 int isKeyword(const char* str)
 {
@@ -186,7 +186,7 @@ Token* tokenize(const char* filename)
 					{
 						if (isOperatorc(data[i + 1]))
 						{
-							buf[bufLen++] = data[i++];
+							buf[bufLen++] = data[++i];
 						}
 						buf[bufLen] = '\0';
 						addToken(&tokens, buf);
