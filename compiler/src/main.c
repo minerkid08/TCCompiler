@@ -4,6 +4,7 @@
 #include "parser/parser.h"
 #include "token.h"
 #include "tokenizer/tokenizer.h"
+#include "utils.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -66,16 +67,8 @@ int main(int argc, const char** argv)
 {
 	const char* filename = argv[1];
 	const char* outFilename = argv[2];
-	if (argc < 2)
-	{
-		printf("more args pls\n");
-		filename = "test.lua";
-	}
 	if (argc < 3)
-	{
-		printf("even more args pls\n");
-		outFilename = "out.asm";
-	}
+    err("usage: compiler outFile inFile\n");
 
 	Token* tokens = tokenize(filename);
 
