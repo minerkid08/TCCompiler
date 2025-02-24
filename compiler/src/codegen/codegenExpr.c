@@ -4,6 +4,7 @@
 #include "codegen.h"
 
 #include "dynList.h"
+#include "token.h"
 
 #include <stdio.h>
 
@@ -35,13 +36,13 @@ int getPrec(char c)
 {
 	switch (c)
 	{
-	case '+':
+	case OPERATOR_ADD:
 		return 2;
-	case '-':
+	case OPERATOR_SUB:
 		return 1;
-	case '*':
+	case OPERATOR_MUL:
 		return 4;
-	case '/':
+	case OPERATOR_DIV:
 		return 3;
 	}
 	printf("invalid operator '%c'\n", c);
@@ -126,16 +127,16 @@ void genExpr(Buffer* buf, int reg, const ExprNode* expr)
 				res->type = ExprTypeNum;
 				switch (node->opr.opr)
 				{
-				case '+':
+				case OPERATOR_ADD:
 					res->num.val = a1->num.val + a2->num.val;
 					break;
-				case '-':
+				case OPERATOR_SUB:
 					res->num.val = a1->num.val - a2->num.val;
 					break;
-				case '*':
+				case OPERATOR_MUL:
 					res->num.val = a1->num.val * a2->num.val;
 					break;
-				case '/':
+				case OPERATOR_DIV:
 					res->num.val = a1->num.val / a2->num.val;
 					break;
 				}
@@ -161,27 +162,27 @@ void genExpr(Buffer* buf, int reg, const ExprNode* expr)
 				else if (a2->type == ExprTypeVar)
 					loadVar(buf, reg + 1, a2->var.name);
 				else
-					bufferWrite(buf, "sub r%d, sp, %d\nload r%d, [r%d]\n", reg + 1, a1->num.val * 2, reg + 1,
-								reg + 1);
+					bufferWrite(buf, "sub r%d, sp, %d\nload r%d, [r%d]\n", reg + 1, a1->num.val * 2, reg + 1, reg + 1);
 
 				const char* opr;
 
 				switch (node->opr.opr)
 				{
-				case '+':
+				case OPERATOR_ADD:
 					opr = "add";
 					break;
-				case '-':
+				case OPERATOR_SUB:
 					opr = "sub";
 					break;
-				case '*':
+				case OPERATOR_MUL:
 					err("multiplying is not supported\n");
 					break;
-				case '/':
+				case OPERATOR_DIV:
 					err("division is not supported\n");
 					break;
 				}
-				bufferWrite(buf, "%s r%d, r%d, %s\nsub r%d, sp, %d\nstore [r%d], r%d\n", opr, reg, reg, a2Str, reg + 1, tempVarCount * 2, reg + 1, reg);
+				bufferWrite(buf, "%s r%d, r%d, %s\nsub r%d, sp, %d\nstore [r%d], r%d\n", opr, reg, reg, a2Str, reg + 1,
+							tempVarCount * 2, reg + 1, reg);
 			}
 			stack1[l2 - 2] = res;
 			dynList_resize((void**)&stack1, l2 - 1);

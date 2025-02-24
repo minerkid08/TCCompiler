@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../utils.h"
+#include "utils.h"
 
 const char** vars;
 int* scopeVarCounts;

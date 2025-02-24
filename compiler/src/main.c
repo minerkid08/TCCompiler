@@ -5,7 +5,6 @@
 #include "token.h"
 #include "tokenizer/tokenizer.h"
 #include <stdio.h>
-#include <stdlib.h>
 
 void printExpr(const ExprNode* expr, const char* indent)
 {
@@ -53,10 +52,14 @@ void printNodes(StatementNode* nodes, const char* indent)
 			if (node->varDef.expr)
 				printExpr(node->varDef.expr, indent);
 			break;
+		case StatementTypeIf:
+			printf("%sif\n", indent);
+			printExpr(node->condIf.expr, indent);
+			printNodes(node->condIf.statments, "    ");
+			break;
 		}
 	}
 }
-
 
 int main(int argc, const char** argv)
 {
@@ -67,9 +70,18 @@ int main(int argc, const char** argv)
 		filename = "test.lua";
 	}
 
-	Token* tokens = tokenize(filename);
+  Token* tokens = tokenize(filename);
 
+  //int len = dynList_size(tokens);
+  //for(int i = 0; i < len; i++)
+  //{
+  //  printf("%s, %s\n", tokenTypeToStr(tokens[i].type), tokens[i].data);
+  //}
+  
 	StatementNode* nodes = parse(tokens);
-	Buffer* buf = genCode(nodes);
-	printf("%s", buf->data);
+
+	printNodes(nodes, "");
+
+	// Buffer* buf = genCode(nodes);
+	// printf("%s", buf->data);
 }

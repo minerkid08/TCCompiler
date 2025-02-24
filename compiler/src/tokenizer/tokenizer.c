@@ -1,6 +1,6 @@
 #include "tokenizer.h"
 #include "dynList.h"
-#include "../token.h"
+#include "token.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,7 +9,13 @@
 const char* keywords[] = {"function", "return", "end",	 "if",		"else", "then", "do",
 						  "local",	  "while",	"break", "require", "ref",	"asm",	"inline"};
 
-const char* operators[] = {"+", "-", "*", "/", "=", "!"};
+const char operatorChars[] = {'+', '-', '*', '/', '=', '!', '<', '>', '^'};
+
+const char* operators[] = {"+", "-", "*", "/", "=", "==", "!=", "<", ">", "<=", ">=", "<<", ">>", "&", "|", "^"};
+
+const char operatorConsts[] = {OPERATOR_ADD, OPERATOR_SUB, OPERATOR_MUL, OPERATOR_DIV, OPERATOR_ASSIGN, OPERATOR_EQ,
+							   OPERATOR_NEQ, OPERATOR_LT,  OPERATOR_GT,	 OPERATOR_LTE, OPERATOR_GTE,	OPERATOR_SHL,
+							   OPERATOR_SHR, OPERATOR_AND, OPERATOR_OR,	 OPERATOR_XOR};
 
 int isKeyword(const char* str)
 {
@@ -21,11 +27,21 @@ int isKeyword(const char* str)
 	return 0;
 }
 
-int isOperator(const char* str)
+char isOperator(const char* str)
 {
 	for (int i = 0; i < sizeof(operators) / sizeof(char*); i++)
 	{
 		if (strcmp(str, operators[i]) == 0)
+			return operatorConsts[i];
+	}
+	return 0;
+}
+
+int isOperatorc(char c)
+{
+	for (int i = 0; i < sizeof(operatorChars) / sizeof(char); i++)
+	{
+		if (c == operatorChars[i])
 			return 1;
 	}
 	return 0;
@@ -82,13 +98,20 @@ void addToken(Token** tokens, const char* str)
 		type = TOKEN_COMMA;
 	else if (strcmp(str, "\n") == 0)
 		type = TOKEN_NEWLINE;
-	else if (isOperator(str))
-		type = TOKEN_OPERATOR;
-	else if (str[0] == '\1')
-		type = TOKEN_EOF;
 	else
-		type = TOKEN_LITERAL;
-
+	{
+		char c = isOperator(str);
+		if (c)
+		{
+			tokenStr[0] = c;
+			tokenStr[1] = '\0';
+			type = TOKEN_OPERATOR;
+		}
+		else if (str[0] == '\1')
+			type = TOKEN_EOF;
+		else
+			type = TOKEN_LITERAL;
+	}
 	int tokenId = dynList_size(*tokens);
 	dynList_resize((void**)tokens, tokenId + 1);
 	Token* token = &(*tokens)[tokenId];
@@ -128,6 +151,7 @@ Token* tokenize(const char* filename)
 				{
 					c2 = data[++i];
 				}
+				continue;
 			}
 		}
 		if (!inStr)
@@ -160,6 +184,10 @@ Token* tokenize(const char* filename)
 					}
 					else
 					{
+						if (isOperatorc(data[i + 1]))
+						{
+							buf[bufLen++] = data[i++];
+						}
 						buf[bufLen] = '\0';
 						addToken(&tokens, buf);
 						bufLen = 0;

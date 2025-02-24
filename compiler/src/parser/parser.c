@@ -1,13 +1,14 @@
-#include "../token.h"
-#include "../utils.h"
 #include "dynList.h"
 #include "parseNodes.h"
+#include "token.h"
+#include "utils.h"
 #include <string.h>
 
 int parseStatement(const Token* tokens, int* i, StatementNode* destNode);
 void parseFunction(const Token* tokens, int* i, StatementNode* destNode);
 void parseFunctionCall(const Token* tokens, int* i, StatementNode* destNode);
 void parseVarDecl(const Token* tokens, int* i, StatementNode* destNode);
+void parseIf(const Token* tokens, int* i, StatementNode* destNode);
 
 ExprNode* parseExpression(const Token* tokens, int* i, int* endTypes, int endTypesLen);
 
@@ -139,7 +140,10 @@ void parseFunction(const Token* tokens, int* i, StatementNode* destNode)
 			if (token->type == TOKEN_KEYWORD)
 			{
 				if (strcmp(token->data, "end") == 0)
+				{
+					dynList_resize((void**)&fun->statements, nodec);
 					return;
+				}
 			}
 			nodec += parseStatement(tokens, i, node);
 		}
@@ -155,9 +159,12 @@ int parseStatement(const Token* tokens, int* i, StatementNode* destNode)
 		err("unexpected token '%s'\n", tokenTypeToStr(token->type));
 	if (token->type == TOKEN_KEYWORD)
 	{
-		if (strcmp(token->data, "local"))
+		if (strcmp(token->data, "local") == 0)
+			parseVarDecl(tokens, i, destNode);
+		else if (strcmp(token->data, "if") == 0)
+			parseIf(tokens, i, destNode);
+		else
 			err("unexpected keyword '%s'\n", token->data);
-		parseVarDecl(tokens, i, destNode);
 		return 1;
 	}
 	token = tokens + (*i + 1);
@@ -176,7 +183,7 @@ void parseVarDecl(const Token* tokens, int* i, StatementNode* destNode)
 	StatementNodeVarDef* var = &destNode->varDef;
 	var->name = token->data;
 	token = consumeToken();
-	if (token->type == TOKEN_OPERATOR && ((const char*)token->data)[0] == '=')
+	if (token->type == TOKEN_OPERATOR && (token->data)[0] == OPERATOR_ASSIGN)
 	{
 		int endTypes[] = {TOKEN_SEMICOLON};
 		var->expr = parseExpression(tokens, i, endTypes, 1);
@@ -235,7 +242,7 @@ ExprNode* parseExpression(const Token* tokens, int* i, int* endTypes, int endTyp
 	const Token* token;
 	int size = 0;
 	ExprNode* outNodes = dynList_new(0, sizeof(ExprNode*));
-  dynList_reserve((void**)&outNodes, 10);
+	dynList_reserve((void**)&outNodes, 10);
 	while (1)
 	{
 		token = consumeToken();
@@ -264,4 +271,37 @@ ExprNode* parseExpression(const Token* tokens, int* i, int* endTypes, int endTyp
 		size++;
 	}
 	return 0;
+}
+
+void parseIf(const Token* tokens, int* i, StatementNode* destNode)
+{
+	destNode->type = StatementTypeIf;
+	const Token* token = consumeToken();
+	if (token->type != TOKEN_OPENPARAN)
+		err("expected '(' after 'if' keyword\n");
+	int endTypes[] = {TOKEN_CLOSEPARAN};
+	destNode->condIf.expr = parseExpression(tokens, i, endTypes, 1);
+	token = consumeToken();
+	if (strcmp(token->data, "then"))
+		err("expected then after if condition\n");
+
+	StatementNode* statements = dynList_new(0, sizeof(StatementNode));
+	dynList_reserve((void**)&statements, 5);
+	int nodec = 0;
+	while (1)
+	{
+		token = consumeToken();
+		if (token->type == TOKEN_KEYWORD)
+		{
+			if (strcmp(token->data, "end") == 0)
+			{
+				dynList_resize((void**)&statements, nodec);
+				destNode->condIf.statments = statements;
+				return;
+			}
+		}
+		dynList_resize((void**)&statements, nodec + 1);
+		StatementNode* node = statements + nodec;
+		nodec += parseStatement(tokens, i, node);
+	}
 }

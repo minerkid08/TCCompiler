@@ -11,6 +11,7 @@ typedef struct ExprNode ExprNode;
 #define StatementTypeFunCall 1
 #define StatementTypeVarDef 2
 #define StatementTypeVarAssign 3
+#define StatementTypeIf 4
 
 typedef struct 
 {
@@ -40,6 +41,12 @@ typedef struct
   ExprNode* expr;
 } StatementNodeVarAssign;
 
+typedef struct
+{
+  ExprNode* expr;
+  StatementNode* statments;
+} StatementNodeIf;
+
 struct StatementNode
 {
   int type;
@@ -49,6 +56,7 @@ struct StatementNode
     StatementNodeFunCall funCall;
     StatementNodeVarDef varDef;
     StatementNodeVarAssign varAssing;
+    StatementNodeIf condIf;
   };
 };
 
