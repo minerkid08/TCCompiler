@@ -1,13 +1,3 @@
-in:
-push r13
-mov r13, sp
-mov r1, 2
-mov sp, r13
-pop r13
-ret
-mov sp, r13
-pop r13
-ret ; in
 main:
 push r13
 mov r13, sp

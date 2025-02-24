@@ -1,6 +1,7 @@
 #include "tokenizer.h"
 #include "dynList.h"
 #include "token.h"
+#include "utils.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -119,9 +120,27 @@ void addToken(Token** tokens, const char* str)
 	token->data = tokenStr;
 }
 
+void tokenizeFile(Token** tokens, const char* filename);
 Token* tokenize(const char* filename)
 {
+	Token* tokens = dynList_new(0, sizeof(Token));
+	dynList_reserve((void**)&tokens, 20);
+	tokenizeFile(&tokens, filename);
+
+	int tokenId = dynList_size(tokens);
+	dynList_resize((void**)&tokens, tokenId + 1);
+	Token* token = tokens + tokenId;
+	token->type = TOKEN_EOF;
+	token->data = 0;
+
+	return tokens;
+}
+
+void tokenizeFile(Token** tokens, const char* filename)
+{
 	FILE* file = fopen(filename, "rb");
+  if(file == 0)
+    err("cant find file '%s'\n", filename);
 	fseek(file, 0, SEEK_END);
 	unsigned long long size = ftell(file);
 	fseek(file, 0, SEEK_SET);
@@ -129,9 +148,6 @@ Token* tokenize(const char* filename)
 	char* data = malloc(size);
 
 	fread(data, 1, size, file);
-
-	Token* tokens = dynList_new(0, sizeof(Token));
-	dynList_reserve((void**)&tokens, 20);
 
 	char buf[64];
 	int bufLen = 0;
@@ -161,9 +177,36 @@ Token* tokenize(const char* filename)
 				if (!isNumc(c) && !isLetter(c))
 				{
 					buf[bufLen] = '\0';
-					addToken(&tokens, buf);
-					bufLen = 0;
-					inToken = 0;
+					if (strcmp(buf, "require") == 0)
+					{
+						if (data[i] != '(')
+							err("expected '(' after require\n");
+						if (data[++i] != '"')
+							err("expected string in require statement\n");
+						bufLen = 0;
+						inToken = 0;
+						c = data[++i];
+						buf[bufLen++] = c;
+						while (c != '"')
+						{
+							c = data[++i];
+							buf[bufLen++] = c;
+						}
+						buf[--bufLen] = '\0';
+						if (data[++i] != ')')
+							err("expected ')' after require statement\n");
+						if (data[++i] != ';')
+							err("expected ';' after require statement\n");
+            tokenizeFile(tokens, buf);
+						bufLen = 0;
+            continue;
+					}
+					else
+					{
+						addToken(tokens, buf);
+						bufLen = 0;
+						inToken = 0;
+					}
 				}
 				else
 				{
@@ -189,7 +232,7 @@ Token* tokenize(const char* filename)
 							buf[bufLen++] = data[++i];
 						}
 						buf[bufLen] = '\0';
-						addToken(&tokens, buf);
+						addToken(tokens, buf);
 						bufLen = 0;
 						inToken = 0;
 					}
@@ -204,16 +247,13 @@ Token* tokenize(const char* filename)
 				inStr = 0;
 				inToken = 0;
 				buf[bufLen] = '\0';
-				addToken(&tokens, buf);
+				addToken(tokens, buf);
 				bufLen = 0;
 			}
 		}
 	}
-	addToken(&tokens, "\1");
 
 	free(data);
 
 	fclose(file);
-
-	return tokens;
 }

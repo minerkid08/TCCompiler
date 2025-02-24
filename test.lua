@@ -1,8 +1,4 @@
-function out(value) end
-
-function in()
-  return 2;
-end
+require("stdlib.lua");
 
 function main()
   local x;

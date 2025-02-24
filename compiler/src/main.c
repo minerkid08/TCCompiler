@@ -77,21 +77,21 @@ int main(int argc, const char** argv)
 		outFilename = "out.asm";
 	}
 
-  Token* tokens = tokenize(filename);
+	Token* tokens = tokenize(filename);
 
-  //int len = dynList_size(tokens);
-  //for(int i = 0; i < len; i++)
-  //{
-  //  printf("%s, %s\n", tokenTypeToStr(tokens[i].type), tokens[i].data);
-  //}
-  
+	// int len = dynList_size(tokens);
+	// for (int i = 0; i < len; i++)
+	//{
+	//	printf("%s, %s\n", tokenTypeToStr(tokens[i].type), tokens[i].data);
+	// }
+
 	StatementNode* nodes = parse(tokens);
 
-	//printNodes(nodes, "");
+	// printNodes(nodes, "");
 
 	Buffer* buf = genCode(nodes);
 
-  FILE* outFile = fopen(outFilename, "wb");
-  fprintf(outFile, "%s", buf->data);
-  fclose(outFile);
+	FILE* outFile = fopen(outFilename, "wb");
+	fprintf(outFile, "%s", buf->data);
+	fclose(outFile);
 }
