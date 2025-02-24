@@ -1,29 +1,37 @@
-doThing:
-add r4, r1, r2 
-shl r4, r4, r3 
-out r4 
-ret
-
 main:
-mov r1, 4
 push r13
 mov r13, sp
-out r1 
+sub sp, sp, 2 ; x
+sub r1, sp, 2
+load r1, [r1] ; x
+add r1, r1, 2
+sub r2, sp, 2
+store [r2], r1
+sub r1, sp, 2
+load r1, [r1]
+and r1, r1, 3
+sub r2, sp, 4
+store [r2], r1
+sub r1, sp, 4
+load r1, [r1]
+push r1 ; a
+load r1, [sp] ; a
+cmp r1, 4
+mov r1, 1
+je mainCmp0
+mov r1, 0
+mainCmp0:
+sub r2, sp, 2
+store [r2], r1
+sub r1, sp, 2
+load r1, [r1]
+cmp r1, 0
+jeq mainIf1
+load r1, [sp] ; a
+call out
+mainIf1:
+mov r1, 5
+call out
 mov sp, r13
 pop r13
-push 4
-push 5
-push 6
-sub r12, sp, 2
-load r1 [r12]
-sub r12, sp, 1
-load r2 [r12]
-load r3 [sp]
-push r13
-mov r13, sp
-call doThing
-mov sp, r13
-pop r13
-ret
-
-
+ret ; main

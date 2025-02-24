@@ -1,3 +1,2 @@
-inline asm function out(value)
-  out $value
-end
+function out(value) end
+function in() end

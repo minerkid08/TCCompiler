@@ -1,0 +1,2 @@
+clear
+compiler/bin/compiler test2.lua
