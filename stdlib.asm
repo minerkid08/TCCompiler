@@ -1,7 +1,7 @@
 in:
-  in r1
-  ret
+in r1
+ret
 
 out:
-  out r1
-  ret
+out r1
+ret

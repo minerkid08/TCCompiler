@@ -13,6 +13,7 @@ typedef struct ExprNode ExprNode;
 #define StatementTypeVarAssign 3
 #define StatementTypeIf 4
 #define StatementTypeReturn 5
+#define StatementTypeWhile 6
 
 typedef struct 
 {
@@ -52,6 +53,12 @@ typedef struct
 typedef struct
 {
   ExprNode* expr;
+  StatementNode* statments;
+} StatementNodeWhile;
+
+typedef struct
+{
+  ExprNode* expr;
 } StatementNodeReturn;
 
 struct StatementNode
@@ -64,6 +71,7 @@ struct StatementNode
     StatementNodeVarDef varDef;
     StatementNodeVarAssign varAssing;
     StatementNodeIf condIf;
+    StatementNodeWhile loopWhile;
     StatementNodeReturn ret;
   };
 };

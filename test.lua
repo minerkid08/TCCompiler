@@ -2,6 +2,8 @@ require("stdlib.lua");
 
 function main()
   local x;
-  in() -> x;
-  out(x);
+  while(x > 0) do
+    in() -> x;
+    out(x);
+  end
 end
