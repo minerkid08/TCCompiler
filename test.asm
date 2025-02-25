@@ -6,15 +6,11 @@ mainWhile0:
 load r1, [sp] ; x
 cmp r1, 0
 mov r1, 1
-jg mainCmp0
+jg mainCmp1
 mov r1, 0
-mainCmp0:
-sub r2, sp, 2
-store [r2], r1
-sub r1, sp, 2
-load r1, [r1]
+mainCmp1:
 cmp r1, 0
-je mainWhileEnd1
+je mainWhileEnd0
 push r13
 mov r13, sp
 call in
@@ -25,8 +21,8 @@ load r1, [r1] ; x
 call out
 mov sp, r13
 pop r13
-jmp mainWhile1:
-mainWhileEnd1:
+jmp mainWhile0:
+mainWhileEnd0:
 mov sp, r13
 pop r13
 ret ; main

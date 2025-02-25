@@ -157,17 +157,17 @@ void genStatement(Buffer* buf, const StatementNode* node)
 	}
 	case StatementTypeWhile: {
 		const StatementNodeWhile* loopWhile = &node->loopWhile;
-		bufferWrite(buf, "%sWhile%d:\n", funName, ifc);
+    int c = ifc++;
+		bufferWrite(buf, "%sWhile%d:\n", funName, c);
 		genExpr(buf, 1, loopWhile->expr);
-		bufferWrite(buf, "cmp r1, 0\nje %sWhileEnd%d\n", funName, ifc);
+		bufferWrite(buf, "cmp r1, 0\nje %sWhileEnd%d\n", funName, c);
 		pushScope(buf);
 		int len = dynList_size(loopWhile->statments);
 		for (int i = 0; i < len; i++)
 			genStatement(buf, loopWhile->statments + i);
 		popScope(buf);
-		bufferWrite(buf, "jmp %sWhile%d:\n", funName, ifc);
-		bufferWrite(buf, "%sWhileEnd%d:\n", funName, ifc);
-		ifc++;
+		bufferWrite(buf, "jmp %sWhile%d:\n", funName, c);
+		bufferWrite(buf, "%sWhileEnd%d:\n", funName, c);
 		break;
 	}
 	case StatementTypeReturn: {
