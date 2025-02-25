@@ -1,7 +1,7 @@
 #include "codegenExpr.h"
-#include "utils.h"
 #include "buffer.h"
 #include "codegen.h"
+#include "utils.h"
 
 #include "dynList.h"
 #include "token.h"
@@ -131,6 +131,8 @@ void genExpr(Buffer* buf, int reg, const ExprNode* expr)
 	dynList_resize((void**)&stack1, 0);
 
 	int tempVarCount = 0;
+
+	char dontload = 0;
 
 	len = dynList_size(stack2);
 	for (int i = 0; i < len; i++)
@@ -293,7 +295,11 @@ void genExpr(Buffer* buf, int reg, const ExprNode* expr)
 					bufferWrite(buf, "mov r%d, 0\n", reg);
 					bufferWrite(buf, "%sCmp%d:\n", funName, ifc);
 					ifc++;
-					bufferWrite(buf, "sub r%d, sp, %d\nstore [r%d], r%d\n", reg + 1, tempVarCount * 2, reg + 1, reg);
+					if (i == len - 1)
+						dontload = 1;
+					else
+						bufferWrite(buf, "sub r%d, sp, %d\nstore [r%d], r%d\n", reg + 1, tempVarCount * 2, reg + 1,
+									reg);
 				}
 			}
 			stack1[l2 - 2] = res;
@@ -301,11 +307,14 @@ void genExpr(Buffer* buf, int reg, const ExprNode* expr)
 		}
 	}
 
-	const ExprNode* node = stack1[0];
-	if (node->type == ExprTypeNum)
-		bufferWrite(buf, "mov r%d, %d\n", reg, node->num.val);
-	else if (node->type == ExprTypeVar)
-		loadVar(buf, reg, node->var.name);
-	else
-		bufferWrite(buf, "sub r%d, sp, %d\nload r%d, [r%d]\n", reg, node->num.val * 2, reg, reg);
+	if (dontload == 0)
+	{
+		const ExprNode* node = stack1[0];
+		if (node->type == ExprTypeNum)
+			bufferWrite(buf, "mov r%d, %d\n", reg, node->num.val);
+		else if (node->type == ExprTypeVar)
+			loadVar(buf, reg, node->var.name);
+		else
+			bufferWrite(buf, "sub r%d, sp, %d\nload r%d, [r%d]\n", reg, node->num.val * 2, reg, reg);
+	}
 }
