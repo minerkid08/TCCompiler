@@ -92,23 +92,27 @@ int main(int argc, const char** argv)
 	int error = 0;
 	for (int i = 0; i < usageLen; i++)
 	{
-		char found = 0;
+		char refs = 0;
 		for (int j = 0; j < functionLen; j++)
 		{
 			if (strcmp(functions[j], usages[i]) == 0)
 			{
-				found = 1;
-				break;
+				refs++;
 			}
 		}
-		if (!found)
+		if (refs == 0)
 		{
 			error = 1;
 			printf("undefined ref to '%s'\n", usages[i]);
 		}
+		if (refs > 1)
+		{
+			error = 1;
+			printf("found multiple definitions of '%s'\n", usages[i]);
+		}
 	}
-  if(error)
-    return 1;
+	if (error)
+		return 1;
 
 	FILE* file = fopen(argv[1], "wb");
 	fprintf(file, "call main\n");

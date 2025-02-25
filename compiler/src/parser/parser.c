@@ -9,6 +9,7 @@ void parseFunction(const Token* tokens, int* i, StatementNode* destNode);
 void parseFunctionCall(const Token* tokens, int* i, StatementNode* destNode);
 void parseVarDecl(const Token* tokens, int* i, StatementNode* destNode);
 void parseIf(const Token* tokens, int* i, StatementNode* destNode);
+void parseWhile(const Token* tokens, int* i, StatementNode* destNode);
 void parseReturn(const Token* tokens, int* i, StatementNode* destNode);
 
 ExprNode* parseExpression(const Token* tokens, int* i, int* endTypes, int endTypesLen);
@@ -166,6 +167,8 @@ int parseStatement(const Token* tokens, int* i, StatementNode* destNode)
 			parseIf(tokens, i, destNode);
 		else if (strcmp(token->data, "return") == 0)
 			parseReturn(tokens, i, destNode);
+		else if (strcmp(token->data, "while") == 0)
+			parseWhile(tokens, i, destNode);
 		else
 			err("unexpected keyword '%s'\n", token->data);
 		return 1;
@@ -285,6 +288,39 @@ ExprNode* parseExpression(const Token* tokens, int* i, int* endTypes, int endTyp
 		size++;
 	}
 	return 0;
+}
+
+void parseWhile(const Token* tokens, int* i, StatementNode* destNode)
+{
+	destNode->type = StatementTypeWhile;
+	const Token* token = consumeToken();
+	if (token->type != TOKEN_OPENPARAN)
+		err("expected '(' after 'while' keyword\n");
+	int endTypes[] = {TOKEN_CLOSEPARAN};
+	destNode->loopWhile.expr = parseExpression(tokens, i, endTypes, 1);
+	token = consumeToken();
+	if (strcmp(token->data, "do"))
+		err("expected then after while condition\n");
+
+	StatementNode* statements = dynList_new(0, sizeof(StatementNode));
+	dynList_reserve((void**)&statements, 5);
+	int nodec = 0;
+	while (1)
+	{
+		token = consumeToken();
+		if (token->type == TOKEN_KEYWORD)
+		{
+			if (strcmp(token->data, "end") == 0)
+			{
+				dynList_resize((void**)&statements, nodec);
+				destNode->loopWhile.statments = statements;
+				return;
+			}
+		}
+		dynList_resize((void**)&statements, nodec + 1);
+		StatementNode* node = statements + nodec;
+		nodec += parseStatement(tokens, i, node);
+	}
 }
 
 void parseIf(const Token* tokens, int* i, StatementNode* destNode)

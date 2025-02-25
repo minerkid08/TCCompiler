@@ -65,8 +65,8 @@ void printNodes(StatementNode* nodes, const char* indent)
 
 int main(int argc, const char** argv)
 {
-	const char* filename = argv[1];
-	const char* outFilename = argv[2];
+	const char* filename = argv[2];
+	const char* outFilename = argv[1];
 	if (argc < 3)
     err("usage: compiler outFile inFile\n");
 
