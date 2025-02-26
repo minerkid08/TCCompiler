@@ -97,7 +97,7 @@ void setVar(Buffer* buf, int reg, const char* name)
 	if (idx == len - 1)
 		bufferWrite(buf, "store [sp], r%d ; %s\n", reg, name);
 	else
-		bufferWrite(buf, "add r%d, sp, %d\nstore [r%d], r%d ; %s\n", reg, (len - idx - 1) * 2, reg, reg, name);
+		bufferWrite(buf, "add r%d, sp, %d\nstore [r%d], r%d ; %s\n", reg + 1, (len - idx - 1) * 2, reg + 1, reg, name);
 }
 
 void genStatement(Buffer* buf, const StatementNode* node)
