@@ -8,6 +8,7 @@ int parseStatement(const Token* tokens, int* i, StatementNode* destNode);
 void parseFunction(const Token* tokens, int* i, StatementNode* destNode);
 void parseFunctionCall(const Token* tokens, int* i, StatementNode* destNode);
 void parseVarDecl(const Token* tokens, int* i, StatementNode* destNode);
+void parseVarAssign(const Token* tokens, int* i, StatementNode* destNode);
 void parseIf(const Token* tokens, int* i, StatementNode* destNode);
 void parseWhile(const Token* tokens, int* i, StatementNode* destNode);
 void parseReturn(const Token* tokens, int* i, StatementNode* destNode);
@@ -174,9 +175,10 @@ int parseStatement(const Token* tokens, int* i, StatementNode* destNode)
 		return 1;
 	}
 	token = tokens + (*i + 1);
-	if (token->type != TOKEN_OPENPARAN)
-		err("expected ')' after literal\n");
-	parseFunctionCall(tokens, i, destNode);
+	if (token->type == TOKEN_OPENPARAN)
+		parseFunctionCall(tokens, i, destNode);
+	else
+		parseVarAssign(tokens, i, destNode);
 	return 1;
 }
 
@@ -201,6 +203,22 @@ void parseVarDecl(const Token* tokens, int* i, StatementNode* destNode)
 		if (token->type != TOKEN_SEMICOLON)
 			err("expected semicolon after var decl\n");
 	}
+}
+
+void parseVarAssign(const Token* tokens, int* i, StatementNode* destNode)
+{
+	const char* name = (tokens + *i)->data;
+	const Token* token = consumeToken();
+	destNode->type = StatementTypeVarAssign;
+	if (token->type != TOKEN_OPERATOR || token->data[0] != OPERATOR_ASSIGN)
+		err("expected '=' after var name\n");
+	StatementNodeVarAssign* var = &destNode->varAssing;
+	var->name = token->data;
+	int endTypes[] = {TOKEN_SEMICOLON};
+	var->expr = parseExpression(tokens, i, endTypes, 1);
+	token = tokens + *i;
+	if (token->type != TOKEN_SEMICOLON)
+		err("expected semicolon after var assign\n");
 }
 
 void parseFunctionCall(const Token* tokens, int* i, StatementNode* destNode)

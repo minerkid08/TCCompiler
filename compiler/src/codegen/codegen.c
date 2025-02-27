@@ -39,13 +39,8 @@ void pushScope(Buffer* buf)
 {
 	int scopec = dynList_size(scopeVarCounts);
 	dynList_resize((void**)&scopeVarCounts, scopec + 1);
-	scopeVarCounts[scopec] = 2;
+	scopeVarCounts[scopec] = 0;
 	bufferWrite(buf, "push r13\nmov r13, sp\n");
-
-	int varc = dynList_size(vars);
-	dynList_resize((void**)&vars, varc + 2);
-	vars[varc] = 0;
-	vars[varc + 1] = 0;
 }
 
 void pushVar(const char* name)
@@ -116,6 +111,12 @@ void genStatement(Buffer* buf, const StatementNode* node)
 			bufferWrite(buf, "sub sp, sp, 2 ; %s\n", varDecl->name);
 		break;
 	}
+	case StatementTypeVarAssign: {
+		const StatementNodeVarAssign* varDecl = &node->varAssing;
+		genExpr(buf, 1, varDecl->expr);
+		setVar(buf, 1, varDecl->name);
+		break;
+	}
 	case StatementTypeFunCall: {
 		const StatementNodeFunCall* funCall = &node->funCall;
 		int funLen = dynList_size(functions);
@@ -157,7 +158,7 @@ void genStatement(Buffer* buf, const StatementNode* node)
 	}
 	case StatementTypeWhile: {
 		const StatementNodeWhile* loopWhile = &node->loopWhile;
-    int c = ifc++;
+		int c = ifc++;
 		bufferWrite(buf, "%sWhile%d:\n", funName, c);
 		genExpr(buf, 1, loopWhile->expr);
 		bufferWrite(buf, "cmp r1, 0\nje %sWhileEnd%d\n", funName, c);
@@ -209,6 +210,7 @@ Buffer* genCode(const StatementNode* statements)
 				ifc = 0;
 				bufferWrite(buf, "%s:\n", func->name);
 				pushScope(buf);
+				pushVar(0);
 				for (int j = 0; j < func->argc; j++)
 					bufferWrite(buf, "push r%d ; %s\n", j + 1, func->argNames[j]);
 				int len = dynList_size(func->statements);
@@ -217,6 +219,13 @@ Buffer* genCode(const StatementNode* statements)
 				popScope(buf);
 				bufferWrite(buf, "ret ; %s\n", func->name);
 			}
+		}
+		if (node->type == StatementTypeVarDef)
+		{
+			const StatementNodeVarDef* varDecl = &node->varDef;
+			pushVar(varDecl->name);
+			if (varDecl->expr)
+				err("top level varables cant be initalised\n");
 		}
 	}
 
