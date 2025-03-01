@@ -4,12 +4,9 @@ function main()
   local x;
   in() -> x;
   while(1) do
-    local a = x >> 7;
-    local b = a ^ x;
-    a = b << 9;
-    b = a ^ b;
-    a = b >> 8;
-    b = a ^ b;
-    out(a);
+    x = x >> 7 ^ x;
+    x = x << 9 ^ x;
+    x = x >> 8 ^ x;
+    out(x);
   end
 end

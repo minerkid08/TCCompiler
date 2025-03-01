@@ -6,7 +6,6 @@
 #include "tokenizer/tokenizer.h"
 #include "utils.h"
 #include <stdio.h>
-#include <string.h>
 
 void printExpr(const ExprNode* expr, const char* indent)
 {
@@ -33,12 +32,12 @@ void printExpr(const ExprNode* expr, const char* indent)
 	}
 }
 
-void printNodes(StatementNode* nodes, const char* indent)
+void printNodes(const StatementNode* nodes, const char* indent)
 {
 	int len = dynList_size(nodes);
 	for (int i = 0; i < len; i++)
 	{
-		StatementNode* node = nodes + i;
+		const StatementNode* node = nodes + i;
 		switch (node->type)
 		{
 		case StatementTypeFunc:
@@ -67,8 +66,13 @@ int main(int argc, const char** argv)
 {
 	const char* filename = argv[2];
 	const char* outFilename = argv[1];
+
 	if (argc < 3)
-    err("usage: compiler outFile inFile\n");
+  {
+    filename = "test.lua";
+    outFilename = "test.asm";
+  }
+   // err("usage: compiler outFile inFile\n");
 
 	Token* tokens = tokenize(filename);
 

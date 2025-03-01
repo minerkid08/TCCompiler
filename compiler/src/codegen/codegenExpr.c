@@ -1,6 +1,7 @@
 #include "codegenExpr.h"
 #include "buffer.h"
 #include "codegen.h"
+#include "codegen/vars.h"
 #include "utils.h"
 
 #include "dynList.h"
@@ -35,6 +36,7 @@ void printStack(const ExprNode** expr, const char* indent)
 		}
 	}
 }
+
 int getPrec(char c)
 {
 	switch (c)
@@ -217,14 +219,14 @@ void genExpr(Buffer* buf, int reg, const ExprNode* expr)
 				else if (a1->type == ExprTypeVar)
 					loadVar(buf, reg, a1->var.name);
 				else
-					bufferWrite(buf, "sub r%d, sp, %d\nload r%d, [r%d] ; t%d\n", reg, a1->num.val * 2, reg, reg, a1->num.val);
+					loadTmpVar(buf, reg, a1->num.val);
 
 				if (a2->type == ExprTypeNum)
 					snprintf(a2Str, 6, "%d", a2->num.val);
 				else if (a2->type == ExprTypeVar)
 					loadVar(buf, reg + 1, a2->var.name);
 				else
-					bufferWrite(buf, "sub r%d, sp, %d\nload r%d, [r%d] ; t%d\n", reg + 1, a1->num.val * 2, reg + 1, reg + 1, a1->num.val);
+					loadTmpVar(buf, reg + 1, a2->num.val);
 
 				if (getPrec(node->opr.opr) > -1)
 				{
@@ -260,8 +262,8 @@ void genExpr(Buffer* buf, int reg, const ExprNode* expr)
 						opr = "xor";
 						break;
 					}
-					bufferWrite(buf, "%s r%d, r%d, %s\nsub r%d, sp, %d\nstore [r%d], r%d ; t%d\n", opr, reg, reg, a2Str,
-								reg + 1, tempVarCount * 2, reg + 1, reg, tempVarCount);
+					bufferWrite(buf, "%s r%d, r%d, %s\n", opr, reg, reg, a2Str);
+					setTmpVar(buf, reg, tempVarCount);
 				}
 				else
 				{
@@ -298,8 +300,7 @@ void genExpr(Buffer* buf, int reg, const ExprNode* expr)
 					if (i == len - 1)
 						dontload = 1;
 					else
-						bufferWrite(buf, "sub r%d, sp, %d\nstore [r%d], r%d ; t%d\n", reg + 1, tempVarCount * 2, reg + 1,
-									reg, tempVarCount);
+						setTmpVar(buf, reg, tempVarCount);
 				}
 			}
 			stack1[l2 - 2] = res;
@@ -315,6 +316,7 @@ void genExpr(Buffer* buf, int reg, const ExprNode* expr)
 		else if (node->type == ExprTypeVar)
 			loadVar(buf, reg, node->var.name);
 		else
-			bufferWrite(buf, "sub r%d, sp, %d\nload r%d, [r%d] ; t%d\n", reg, node->num.val * 2, reg, reg, node->num.val);
+      loadTmpVar(buf, reg, node->num.val);
 	}
+  clearTmpVars();
 }

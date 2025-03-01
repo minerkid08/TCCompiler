@@ -213,7 +213,7 @@ void parseVarAssign(const Token* tokens, int* i, StatementNode* destNode)
 	if (token->type != TOKEN_OPERATOR || token->data[0] != OPERATOR_ASSIGN)
 		err("expected '=' after var name\n");
 	StatementNodeVarAssign* var = &destNode->varAssing;
-	var->name = token->data;
+	var->name = name;
 	int endTypes[] = {TOKEN_SEMICOLON};
 	var->expr = parseExpression(tokens, i, endTypes, 1);
 	token = tokens + *i;
