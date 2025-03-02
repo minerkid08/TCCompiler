@@ -109,6 +109,7 @@ void genStatement(Buffer* buf, const StatementNode* node)
 		popScope(buf);
 		bufferWrite(buf, "jmp %sWhile%d\n", funName, c);
 		bufferWrite(buf, "%sWhileEnd%d:\n", funName, c);
+    clearRegs();
 		break;
 	}
 	case StatementTypeReturn: {

@@ -2,6 +2,7 @@
 #include "buffer.h"
 #include "codegen.h"
 #include "codegen/vars.h"
+#include "parser/parseNodes.h"
 #include "utils.h"
 
 #include "dynList.h"
@@ -132,9 +133,8 @@ void genExpr(Buffer* buf, int reg, const ExprNode* expr)
 	// printStack(stack2, "  ");
 	dynList_resize((void**)&stack1, 0);
 
-	int tempVarCount = 0;
-
-	char dontload = 0;
+	int tmpVarCount = 0;
+	int prevTmpVar = -1;
 
 	len = dynList_size(stack2);
 	for (int i = 0; i < len; i++)
@@ -207,8 +207,31 @@ void genExpr(Buffer* buf, int reg, const ExprNode* expr)
 			}
 			else
 			{
+				char usingLastVar = 0;
+				if (tmpVarCount != 0)
+				{
+					if (!((a1->type == ExprTypeTmpVar && a1->num.val == tmpVarCount) ||
+						  (a2->type == ExprTypeTmpVar && a2->num.val == tmpVarCount)))
+					{
+						setTmpVar(buf, reg, tmpVarCount);
+						tmpVarCount--;
+					}
+					if (a2->type == ExprTypeTmpVar)
+					{
+						if (a2->num.val == tmpVarCount)
+							usingLastVar = 1;
+						loadTmpVarX(buf, reg + 1, reg + 2, a2->num.val);
+					}
+					else if (a1->type == ExprTypeTmpVar)
+					{
+						if (a1->num.val == tmpVarCount)
+							usingLastVar = 1;
+						loadTmpVarX(buf, reg, reg + 2, a1->num.val);
+					}
+				}
+
 				res->type = ExprTypeTmpVar;
-				res->num.val = ++tempVarCount;
+				res->num.val = ++tmpVarCount;
 				char* a2Str;
 
 				a2Str = malloc(6);
@@ -218,16 +241,13 @@ void genExpr(Buffer* buf, int reg, const ExprNode* expr)
 					bufferWrite(buf, "mov r%d, %d\n", reg, a1->num.val);
 				else if (a1->type == ExprTypeVar)
 					loadVar(buf, reg, a1->var.name);
-				else
-					loadTmpVar(buf, reg, a1->num.val);
 
 				if (a2->type == ExprTypeNum)
 					snprintf(a2Str, 6, "%d", a2->num.val);
 				else if (a2->type == ExprTypeVar)
 					loadVar(buf, reg + 1, a2->var.name);
-				else
-					loadTmpVar(buf, reg + 1, a2->num.val);
 
+				prevTmpVar = tmpVarCount;
 				if (getPrec(node->opr.opr) > -1)
 				{
 					const char* opr;
@@ -263,7 +283,6 @@ void genExpr(Buffer* buf, int reg, const ExprNode* expr)
 						break;
 					}
 					bufferWrite(buf, "%s r%d, r%d, %s\n", opr, reg, reg, a2Str);
-					setTmpVar(buf, reg, tempVarCount);
 				}
 				else
 				{
@@ -296,27 +315,23 @@ void genExpr(Buffer* buf, int reg, const ExprNode* expr)
 					bufferWrite(buf, "%s %sCmp%d\n", opr, funName, ifc);
 					bufferWrite(buf, "mov r%d, 0\n", reg);
 					bufferWrite(buf, "%sCmp%d:\n", funName, ifc);
-					ifc++;
-					if (i == len - 1)
-						dontload = 1;
-					else
-						setTmpVar(buf, reg, tempVarCount);
 				}
+				char buf[5];
+				snprintf(buf, 5, "t%d", tmpVarCount);
+				setReg(reg, buf);
 			}
 			stack1[l2 - 2] = res;
 			dynList_resize((void**)&stack1, l2 - 1);
 		}
 	}
 
-	if (dontload == 0)
+	if (tmpVarCount == 0)
 	{
 		const ExprNode* node = stack1[0];
 		if (node->type == ExprTypeNum)
 			bufferWrite(buf, "mov r%d, %d\n", reg, node->num.val);
 		else if (node->type == ExprTypeVar)
 			loadVar(buf, reg, node->var.name);
-		else
-      loadTmpVar(buf, reg, node->num.val);
 	}
-  clearTmpVars();
+	clearTmpVars();
 }

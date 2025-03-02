@@ -68,18 +68,28 @@ int getVar(const char* name)
 
 void setVar(Buffer* buf, int reg, const char* name)
 {
-	clearReg(reg + 1);
+  setVarX(buf, reg, reg + 1, name);
+}
+
+void setVarX(Buffer* buf, int reg, int auxReg, const char* name)
+{
+	clearReg(auxReg);
 	snprintf(regContents[reg], REGCONT_SIZE, "v%s", name);
-	regContents[reg + 1][0] = 0;
+	regContents[auxReg][0] = 0;
 	int idx = getVar(name);
 	int len = dynList_size(vars);
 	if (idx == len - 1)
 		bufferWrite(buf, "store [sp], r%d ; %s\n", reg, name);
 	else
-		bufferWrite(buf, "add r%d, sp, %d\nstore [r%d], r%d ; %s\n", reg + 1, (len - idx - 1) * 2, reg + 1, reg, name);
+		bufferWrite(buf, "add r%d, sp, %d\nstore [r%d], r%d ; %s\n", auxReg, (len - idx - 1) * 2, auxReg, reg, name);
 }
 
 void loadVar(Buffer* buf, int reg, const char* name)
+{
+  loadVarX(buf, reg, reg + 1, name);
+}
+
+void loadVarX(Buffer* buf, int reg, int auxReg, const char* name)
 {
 	char target[REGCONT_SIZE];
 	snprintf(target, REGCONT_SIZE, "v%s", name);
@@ -97,9 +107,10 @@ void loadVar(Buffer* buf, int reg, const char* name)
 
 	if (reg == foundReg)
 		return;
+	strncpy(target, regContents[reg], REGCONT_SIZE);
 	if (foundReg != -1)
 	{
-		bufferWrite(buf, "mov r%d, r%d ; %s\n", reg, foundReg);
+		bufferWrite(buf, "mov r%d, r%d ; %s\n", reg, foundReg, name);
 		return;
 	}
 
@@ -108,19 +119,30 @@ void loadVar(Buffer* buf, int reg, const char* name)
 	if (idx == len - 1)
 		bufferWrite(buf, "load r%d, [sp] ; %s\n", reg, name);
 	else
+  {
 		bufferWrite(buf, "add r%d, sp, %d\nload r%d, [r%d] ; %s\n", reg, (len - idx - 1) * 2, reg, reg, name);
-	strncpy(target, regContents[reg], REGCONT_SIZE);
+  }
 }
 
 void setTmpVar(Buffer* buf, int reg, int name)
 {
-	clearReg(reg + 1);
+  setTmpVarX(buf, reg, reg + 1, name);
+}
+
+void setTmpVarX(Buffer* buf, int reg, int auxReg, int name)
+{
+	clearReg(auxReg);
 	snprintf(regContents[reg], REGCONT_SIZE, "t%d", name);
-	regContents[reg + 1][0] = 0;
-	bufferWrite(buf, "add r%d, sp, %d\nstore [r%d], r%d ; %s\n", reg + 1, name * 2, reg + 1, reg, regContents[reg]);
+	regContents[auxReg][0] = 0;
+	bufferWrite(buf, "add r%d, sp, %d\nstore [r%d], r%d ; %s\n", auxReg, name * 2, auxReg, reg, regContents[reg]);
 }
 
 void loadTmpVar(Buffer* buf, int reg, int name)
+{
+  loadTmpVarX(buf, reg, reg + 1, name);
+}
+
+void loadTmpVarX(Buffer* buf, int reg, int auxReg, int name)
 {
 	char target[REGCONT_SIZE];
 	snprintf(target, REGCONT_SIZE, "t%d", name);
@@ -166,4 +188,9 @@ void clearTmpVars()
 		if (regContents[i][0] == 't')
 			regContents[i][0] = 0;
 	}
+}
+
+void setReg(int reg, const char *value)
+{
+  strncpy(regContents[reg], value, REGCONT_SIZE);
 }
