@@ -2,14 +2,13 @@
 #include "buffer.h"
 #include "codegenExpr.h"
 #include "dynList.h"
+#include "vars.h"
 #include <stdlib.h>
 #include <string.h>
 
 #include "parser/parseNodes.h"
 #include "utils.h"
 
-const char** vars;
-int* scopeVarCounts;
 StatementNodeFunc* functions;
 
 const char* funName;
@@ -35,71 +34,6 @@ void pushFunction(const StatementNodeFunc* func)
 	func2->argc = func->argc;
 }
 
-void pushScope(Buffer* buf)
-{
-	int scopec = dynList_size(scopeVarCounts);
-	dynList_resize((void**)&scopeVarCounts, scopec + 1);
-	scopeVarCounts[scopec] = 2;
-	bufferWrite(buf, "push r13\nmov r13, sp\n");
-
-	int varc = dynList_size(vars);
-	dynList_resize((void**)&vars, varc + 2);
-	vars[varc] = 0;
-	vars[varc + 1] = 0;
-}
-
-void pushVar(const char* name)
-{
-	int scopec = dynList_size(scopeVarCounts);
-	scopeVarCounts[scopec - 1]++;
-	int varc = dynList_size(vars);
-	dynList_resize((void**)&vars, varc + 1);
-	vars[varc] = name;
-}
-
-void popScope(Buffer* buf)
-{
-	int varc = dynList_size(vars);
-	int scopec = dynList_size(scopeVarCounts);
-	int newLen = varc - scopeVarCounts[scopec - 1];
-	dynList_resize((void**)&vars, newLen);
-	bufferWrite(buf, "mov sp, r13\npop r13\n");
-}
-
-int getVar(const char* name)
-{
-	int len = dynList_size(vars);
-	for (int i = 0; i < len; i++)
-	{
-		if (vars[i] == 0)
-			continue;
-		if (strcmp(vars[i], name) == 0)
-			return i;
-	}
-	err("variable %s not found\n", name);
-	return 0;
-}
-
-void loadVar(Buffer* buf, int reg, const char* name)
-{
-	int idx = getVar(name);
-	int len = dynList_size(vars);
-	if (idx == len - 1)
-		bufferWrite(buf, "load r%d, [sp] ; %s\n", reg, name);
-	else
-		bufferWrite(buf, "add r%d, sp, %d\nload r%d, [r%d] ; %s\n", reg, (len - idx - 1) * 2, reg, reg, name);
-}
-
-void setVar(Buffer* buf, int reg, const char* name)
-{
-	int idx = getVar(name);
-	int len = dynList_size(vars);
-	if (idx == len - 1)
-		bufferWrite(buf, "store [sp], r%d ; %s\n", reg, name);
-	else
-		bufferWrite(buf, "add r%d, sp, %d\nstore [r%d], r%d ; %s\n", reg + 1, (len - idx - 1) * 2, reg + 1, reg, name);
-}
-
 void genStatement(Buffer* buf, const StatementNode* node)
 {
 	switch (node->type)
@@ -114,6 +48,12 @@ void genStatement(Buffer* buf, const StatementNode* node)
 		}
 		else
 			bufferWrite(buf, "sub sp, sp, 2 ; %s\n", varDecl->name);
+		break;
+	}
+	case StatementTypeVarAssign: {
+		const StatementNodeVarAssign* varDecl = &node->varAssing;
+		genExpr(buf, 1, varDecl->expr);
+		setVar(buf, 1, varDecl->name);
 		break;
 	}
 	case StatementTypeFunCall: {
@@ -157,8 +97,9 @@ void genStatement(Buffer* buf, const StatementNode* node)
 	}
 	case StatementTypeWhile: {
 		const StatementNodeWhile* loopWhile = &node->loopWhile;
-    int c = ifc++;
+		int c = ifc++;
 		bufferWrite(buf, "%sWhile%d:\n", funName, c);
+    clearRegs();
 		genExpr(buf, 1, loopWhile->expr);
 		bufferWrite(buf, "cmp r1, 0\nje %sWhileEnd%d\n", funName, c);
 		pushScope(buf);
@@ -166,8 +107,9 @@ void genStatement(Buffer* buf, const StatementNode* node)
 		for (int i = 0; i < len; i++)
 			genStatement(buf, loopWhile->statments + i);
 		popScope(buf);
-		bufferWrite(buf, "jmp %sWhile%d:\n", funName, c);
+		bufferWrite(buf, "jmp %sWhile%d\n", funName, c);
 		bufferWrite(buf, "%sWhileEnd%d:\n", funName, c);
+    clearRegs();
 		break;
 	}
 	case StatementTypeReturn: {
@@ -175,11 +117,7 @@ void genStatement(Buffer* buf, const StatementNode* node)
 		{
 			genExpr(buf, 1, node->ret.expr);
 		}
-		int len = dynList_size(scopeVarCounts);
-		for (int i = 0; i < len; i++)
-		{
-			bufferWrite(buf, "mov sp, r13\npop r13\n");
-		}
+		popScopeRtn(buf);
 		bufferWrite(buf, "ret\n");
 		break;
 	}
@@ -192,8 +130,8 @@ Buffer* genCode(const StatementNode* statements)
 	bufferInit(buf);
 	int len = dynList_size(statements);
 
-	vars = dynList_new(0, sizeof(const char*));
-	scopeVarCounts = dynList_new(0, sizeof(int));
+	initVars();
+
 	functions = dynList_new(0, sizeof(StatementNodeFunc));
 
 	for (int i = 0; i < len; i++)
@@ -209,6 +147,7 @@ Buffer* genCode(const StatementNode* statements)
 				ifc = 0;
 				bufferWrite(buf, "%s:\n", func->name);
 				pushScope(buf);
+				pushVar(0);
 				for (int j = 0; j < func->argc; j++)
 					bufferWrite(buf, "push r%d ; %s\n", j + 1, func->argNames[j]);
 				int len = dynList_size(func->statements);
@@ -217,6 +156,13 @@ Buffer* genCode(const StatementNode* statements)
 				popScope(buf);
 				bufferWrite(buf, "ret ; %s\n", func->name);
 			}
+		}
+		if (node->type == StatementTypeVarDef)
+		{
+			const StatementNodeVarDef* varDecl = &node->varDef;
+			pushVar(varDecl->name);
+			if (varDecl->expr)
+				err("top level varables cant be initalised\n");
 		}
 	}
 
