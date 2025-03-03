@@ -147,22 +147,18 @@ Buffer* genCode(const StatementNode* statements)
 				ifc = 0;
 				bufferWrite(buf, "%s:\n", func->name);
 				pushScope(buf);
-				pushVar(0);
 				for (int j = 0; j < func->argc; j++)
+        {
+         pushVar(func->argNames[j]);
 					bufferWrite(buf, "push r%d ; %s\n", j + 1, func->argNames[j]);
+        }
 				int len = dynList_size(func->statements);
 				for (int i = 0; i < len; i++)
 					genStatement(buf, func->statements + i);
 				popScope(buf);
 				bufferWrite(buf, "ret ; %s\n", func->name);
+        clearRegs();
 			}
-		}
-		if (node->type == StatementTypeVarDef)
-		{
-			const StatementNodeVarDef* varDecl = &node->varDef;
-			pushVar(varDecl->name);
-			if (varDecl->expr)
-				err("top level varables cant be initalised\n");
 		}
 	}
 

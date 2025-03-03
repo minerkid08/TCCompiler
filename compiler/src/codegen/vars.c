@@ -29,8 +29,9 @@ void pushVar(const char* name)
 void pushScope(Buffer* buf)
 {
 	int scopec = dynList_size(scopeVarCounts);
+  pushVar(0);
 	dynList_resize((void**)&scopeVarCounts, scopec + 1);
-	scopeVarCounts[scopec] = 0;
+	scopeVarCounts[scopec] = 1;
 	bufferWrite(buf, "push r13\nmov r13, sp\n");
 }
 
@@ -104,10 +105,10 @@ void loadVarX(Buffer* buf, int reg, int auxReg, const char* name)
 				foundReg = reg;
 		}
 	}
+	strncpy(target, regContents[reg], REGCONT_SIZE);
 
 	if (reg == foundReg)
 		return;
-	strncpy(target, regContents[reg], REGCONT_SIZE);
 	if (foundReg != -1)
 	{
 		bufferWrite(buf, "mov r%d, r%d ; %s\n", reg, foundReg, name);
