@@ -56,8 +56,6 @@ mov sp, r13
 pop r13
 mov sp, r13
 pop r13
-mov sp, r13
-pop r13
 ret
 mov sp, r13
 pop r13
@@ -71,14 +69,17 @@ load r3, [sp] ; spare
 add r4, sp, 2
 load r4, [r4] ; dest
 call move
-mov r1, r2 ; src
-mov r2, r4 ; dest
+add r1, sp, 4
+load r1, [r1] ; src
+add r2, sp, 2
+load r2, [r2] ; dest
 call moveDisk
 add r1, sp, 6
 load r1, [r1] ; numb
 sub r1, r1, 1
-mov r2, r3 ; spare
-mov r3, r4 ; dest
+load r2, [sp] ; spare
+add r3, sp, 2
+load r3, [r3] ; dest
 add r4, sp, 4
 load r4, [r4] ; src
 call move

@@ -47,7 +47,7 @@ void popScope(Buffer* buf)
 void popScopeRtn(Buffer* buf)
 {
 	int len = dynList_size(scopeVarCounts);
-	for (int i = 0; i < len; i++)
+	for (int i = 1; i < len; i++)
 	{
 		bufferWrite(buf, "mov sp, r13\npop r13\n");
 	}
