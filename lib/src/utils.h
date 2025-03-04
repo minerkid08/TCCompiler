@@ -6,5 +6,5 @@
 #define err(args...)                                                                                                   \
 	{                                                                                                                  \
 		printf(args);                                                                                                  \
-		*(char*)0 = 0;                                                                                                 \
+		exit(1);                                                                                                       \
 	}

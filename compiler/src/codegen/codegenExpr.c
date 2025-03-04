@@ -333,5 +333,10 @@ void genExpr(Buffer* buf, int reg, const ExprNode* expr)
 		else if (node->type == ExprTypeVar)
 			loadVar(buf, reg, node->var.name);
 	}
+	else
+	{
+		clearReg(reg);
+		clearReg(reg + 1);
+	}
 	clearTmpVars();
 }

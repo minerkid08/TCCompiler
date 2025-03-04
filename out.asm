@@ -2,41 +2,103 @@ call main
 main:
 push r13
 mov r13, sp
-sub sp, sp, 2 ; x
+sub sp, sp, 2 ; numb
+sub sp, sp, 2 ; src
+sub sp, sp, 2 ; dest
+sub sp, sp, 2 ; spare
 call in
-store [sp], r1 ; x
-mainWhile0:
-mov r1, 1
-cmp r1, 0
-je mainWhileEnd0
-push r13
-mov r13, sp
-load r1, [sp] ; x
-lsr r1, r1, 7
-load r2, [sp] ; x
-xor r1, r1, r2
-store [sp], r1 ; x
-lsl r1, r1, 9
-load r2, [sp] ; x
-xor r1, r1, r2
-store [sp], r1 ; x
-lsr r1, r1, 8
-load r2, [sp] ; x
-xor r1, r1, r2
-store [sp], r1 ; x
-call out
-mov sp, r13
-pop r13
-jmp mainWhile0
-mainWhileEnd0:
+add r2, sp, 6
+store [r2], r1 ; numb
+call in
+add r2, sp, 4
+store [r2], r1 ; src
+call in
+add r2, sp, 2
+store [r2], r1 ; dest
+call in
+store [sp], r1 ; spare
+add r1, sp, 6
+load r1, [r1] ; numb
+add r2, sp, 4
+load r2, [r2] ; src
+add r3, sp, 2
+load r3, [r3] ; dest
+load r4, [sp] ; spare
+call move
 mov sp, r13
 pop r13
 ret ; main
- (x86)\|Eˇù≠∑in:
+
+move:
+push r13
+mov r13, sp
+push r1 ; numb
+push r2 ; src
+push r3 ; dest
+push r4 ; spare
+add r1, sp, 6
+load r1, [r1] ; numb
+cmp r1, 0
+mov r1, 1
+je moveCmp0
+mov r1, 0
+moveCmp0:
+cmp r1, 0
+je moveIf0
+push r13
+mov r13, sp
+add r1, sp, 6
+load r1, [r1] ; src
+add r2, sp, 4
+load r2, [r2] ; dest
+call moveDisk
+mov sp, r13
+pop r13
+mov sp, r13
+pop r13
+mov sp, r13
+pop r13
+ret
+mov sp, r13
+pop r13
+moveIf0:
+add r1, sp, 6
+load r1, [r1] ; numb
+sub r1, r1, 1
+add r2, sp, 4
+load r2, [r2] ; src
+load r3, [sp] ; spare
+add r4, sp, 2
+load r4, [r4] ; dest
+call move
+mov r1, r2 ; src
+mov r2, r4 ; dest
+call moveDisk
+add r1, sp, 6
+load r1, [r1] ; numb
+sub r1, r1, 1
+mov r2, r3 ; spare
+mov r3, r4 ; dest
+add r4, sp, 4
+load r4, [r4] ; src
+call move
+mov sp, r13
+pop r13
+ret ; move
+
+
+in:
 in r1
 ret
 
 out:
 out r1
 ret
-es|Eˇù±∑
+
+moveDisk:
+out r1
+out 5
+out r2
+out 5
+ret
+

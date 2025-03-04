@@ -105,7 +105,7 @@ void loadVarX(Buffer* buf, int reg, int auxReg, const char* name)
 				foundReg = reg;
 		}
 	}
-	strncpy(target, regContents[reg], REGCONT_SIZE);
+	strncpy(regContents[reg], target, REGCONT_SIZE);
 
 	if (reg == foundReg)
 		return;
