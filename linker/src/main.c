@@ -18,11 +18,12 @@ void parseFile(const char* filename)
 	if (file == 0)
 		err("cant find file '%s'\n", filename);
 	fseek(file, 0, SEEK_END);
-	unsigned long long size = ftell(file);
+	unsigned long long size = ftell(file) + 1;
 	fseek(file, 0, SEEK_SET);
 
 	char* data = malloc(size);
 	fread(data, 1, size, file);
+  data[size - 1] = 0;
 
 	char buf[64];
 	int bufLen = 0;
@@ -120,7 +121,7 @@ int main(int argc, const char** argv)
 	int filesLen = dynList_size(files);
 	for (int i = 0; i < filesLen; i++)
 	{
-		fprintf(file, "%s", files[i]);
+		fprintf(file, "%s\n", files[i]);
 	}
 	fclose(file);
 }

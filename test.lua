@@ -1,12 +1,29 @@
 require("stdlib.lua");
 
+function moveDisk(src, dest) end
+
+function move(numb, src, dest, spare) end
+
 function main()
-  local x;
-  in() -> x;
-  while(1) do
-    x = x >> 7 ^ x;
-    x = x << 9 ^ x;
-    x = x >> 8 ^ x;
-    out(x);
+  local numb;
+  local src;
+  local dest;
+  local spare;
+
+  in() -> numb;
+  in() -> src;
+  in() -> dest;
+  in() -> spare;
+
+  move(numb, src, dest, spare);
+end
+
+function move(numb, src, dest, spare)
+  if(numb == 0) then
+    moveDisk(src, dest);
+    return;
   end
+  move(numb - 1, src, spare, dest);
+  moveDisk(src, dest);
+  move(numb - 1, spare, dest, src);
 end
