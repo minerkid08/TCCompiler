@@ -78,6 +78,7 @@ void genStatement(Buffer* buf, const StatementNode* node)
 			genExpr(buf, j + 1, funCall->argExprs[j]);
 		}
 		bufferWrite(buf, "call %s\n", funCall->name);
+    clearRegs();
 		if (funCall->rtnVar)
 			setVar(buf, 1, funCall->rtnVar);
 		break;
