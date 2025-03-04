@@ -7,11 +7,6 @@ char** usages;
 char** functions;
 char** files;
 
-int isLetter(char c)
-{
-	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-}
-
 void parseFile(const char* filename)
 {
 	FILE* file = fopen(filename, "rb");
