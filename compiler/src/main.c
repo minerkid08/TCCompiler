@@ -2,10 +2,12 @@
 #include "dynList.h"
 #include "parser/parseNodes.h"
 #include "parser/parser.h"
+#include "target.h"
 #include "token.h"
 #include "tokenizer/tokenizer.h"
 #include "utils.h"
 #include <stdio.h>
+#include <string.h>
 
 void printExpr(const ExprNode* expr, const char* indent)
 {
@@ -62,17 +64,38 @@ void printNodes(const StatementNode* nodes, const char* indent)
 	}
 }
 
+int target = ARCH_SYMPHONY;
+
 int main(int argc, const char** argv)
 {
-	const char* filename = argv[2];
-	const char* outFilename = argv[1];
+	const char* filename;
+	const char* outFilename;
 
-	if (argc < 3)
-  {
-    filename = "test.lua";
-    outFilename = "test.asm";
-  }
-   // err("usage: compiler outFile inFile\n");
+	if (argc == 1)
+	{
+		filename = "test.lua";
+		outFilename = "test.asm";
+		target = ARCH_SYMPHONY_EXT;
+	}
+	for (int i = 1; i < argc; i++)
+	{
+		if (strcmp(argv[i], "-a") == 0)
+		{
+			if (strcmp(argv[i + 1], "symphony-ext") == 0)
+				target = ARCH_SYMPHONY_EXT;
+		}
+		else if (strcmp(argv[i], "-o") == 0)
+		{
+			outFilename = argv[i + 1];
+		}
+		else
+			filename = argv[i];
+	}
+
+	if (outFilename == 0)
+		err("no output file\n");
+	if (filename == 0)
+		err("no input file\n");
 
 	Token* tokens = tokenize(filename);
 

@@ -1,0 +1,5 @@
+CompileFlags:
+  Add: [
+    -I/home/user/cppgames/turingCompleteCompiler/./lib/src,
+    -I/home/user/cppgames/turingCompleteCompiler/./interperter/src
+]
