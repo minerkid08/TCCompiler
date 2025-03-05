@@ -1,5 +1,6 @@
 #include "vars.h"
 #include "dynList.h"
+#include "target.h"
 #include "utils.h"
 #include <string.h>
 
@@ -29,7 +30,7 @@ void pushVar(const char* name)
 void pushScope(Buffer* buf)
 {
 	int scopec = dynList_size(scopeVarCounts);
-  pushVar(0);
+	pushVar(0);
 	dynList_resize((void**)&scopeVarCounts, scopec + 1);
 	scopeVarCounts[scopec] = 1;
 	bufferWrite(buf, "push r13\nmov r13, sp\n");
@@ -69,12 +70,11 @@ int getVar(const char* name)
 
 void setVar(Buffer* buf, int reg, const char* name)
 {
-  setVarX(buf, reg, reg + 1, name);
+	setVarX(buf, reg, reg + 1, name);
 }
 
 void setVarX(Buffer* buf, int reg, int auxReg, const char* name)
 {
-	clearReg(auxReg);
 	snprintf(regContents[reg], REGCONT_SIZE, "v%s", name);
 	regContents[auxReg][0] = 0;
 	int idx = getVar(name);
@@ -82,22 +82,33 @@ void setVarX(Buffer* buf, int reg, int auxReg, const char* name)
 	if (idx == len - 1)
 		bufferWrite(buf, "store [sp], r%d ; %s\n", reg, name);
 	else
-		bufferWrite(buf, "add r%d, sp, %d\nstore [r%d], r%d ; %s\n", auxReg, (len - idx - 1) * 2, auxReg, reg, name);
+	{
+		if (target == ARCH_SYMPHONY)
+		{
+			bufferWrite(buf, "add r%d, sp, %d\nstore [r%d], r%d ; %s\n", auxReg, (len - idx - 1) * 2, auxReg, reg,
+						name);
+			clearReg(auxReg);
+		}
+		else
+		{
+			bufferWrite(buf, "store [sp, %d], r%d ; %s\n", (len - idx - 1) * 2, reg, name);
+		}
+	}
 }
 
 void loadVar(Buffer* buf, int reg, const char* name)
 {
-  loadVarX(buf, reg, reg + 1, name);
+	loadVarX(buf, reg, reg + 1, name);
 }
 
 void loadVarX(Buffer* buf, int reg, int auxReg, const char* name)
 {
-	char target[REGCONT_SIZE];
-	snprintf(target, REGCONT_SIZE, "v%s", name);
+	char varTarget[REGCONT_SIZE];
+	snprintf(varTarget, REGCONT_SIZE, "v%s", name);
 	int foundReg = -1;
 	for (int i = 0; i < REGCOUNT; i++)
 	{
-		if (strcmp(regContents[i], target) == 0)
+		if (strcmp(regContents[i], varTarget) == 0)
 		{
 			if (foundReg == -1)
 				foundReg = i;
@@ -105,7 +116,7 @@ void loadVarX(Buffer* buf, int reg, int auxReg, const char* name)
 				foundReg = reg;
 		}
 	}
-	strncpy(regContents[reg], target, REGCONT_SIZE);
+	strncpy(regContents[reg], varTarget, REGCONT_SIZE);
 
 	if (reg == foundReg)
 		return;
@@ -120,14 +131,17 @@ void loadVarX(Buffer* buf, int reg, int auxReg, const char* name)
 	if (idx == len - 1)
 		bufferWrite(buf, "load r%d, [sp] ; %s\n", reg, name);
 	else
-  {
-		bufferWrite(buf, "add r%d, sp, %d\nload r%d, [r%d] ; %s\n", reg, (len - idx - 1) * 2, reg, reg, name);
-  }
+	{
+		if (target == ARCH_SYMPHONY)
+			bufferWrite(buf, "add r%d, sp, %d\nload r%d, [r%d] ; %s\n", reg, (len - idx - 1) * 2, reg, reg, name);
+		else
+			bufferWrite(buf, "load r%d, [sp, %d] ; %s\n", reg, (len - idx - 1) * 2, name);
+	}
 }
 
 void setTmpVar(Buffer* buf, int reg, int name)
 {
-  setTmpVarX(buf, reg, reg + 1, name);
+	setTmpVarX(buf, reg, reg + 1, name);
 }
 
 void setTmpVarX(Buffer* buf, int reg, int auxReg, int name)
@@ -140,7 +154,7 @@ void setTmpVarX(Buffer* buf, int reg, int auxReg, int name)
 
 void loadTmpVar(Buffer* buf, int reg, int name)
 {
-  loadTmpVarX(buf, reg, reg + 1, name);
+	loadTmpVarX(buf, reg, reg + 1, name);
 }
 
 void loadTmpVarX(Buffer* buf, int reg, int auxReg, int name)
@@ -191,7 +205,7 @@ void clearTmpVars()
 	}
 }
 
-void setReg(int reg, const char *value)
+void setReg(int reg, const char* value)
 {
-  strncpy(regContents[reg], value, REGCONT_SIZE);
+	strncpy(regContents[reg], value, REGCONT_SIZE);
 }
