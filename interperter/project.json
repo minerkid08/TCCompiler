@@ -1,0 +1,8 @@
+{
+  "name": "interperter",
+  "type": "program",
+  "out": "interperter",
+  "build": [],
+  "libs": ["lib"],
+  "lang": "c"
+}

@@ -2,6 +2,7 @@
   "projects": [
     "compiler",
     "linker",
+    "interperter",
     "lib"
   ],
   "noLibs": true

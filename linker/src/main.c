@@ -7,11 +7,6 @@ char** usages;
 char** functions;
 char** files;
 
-int isLetter(char c)
-{
-	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-}
-
 void parseFile(const char* filename)
 {
 	FILE* file = fopen(filename, "rb");
@@ -116,7 +111,7 @@ int main(int argc, const char** argv)
 		return 1;
 
 	FILE* file = fopen(argv[1], "wb");
-	fprintf(file, "call main\n");
+	fprintf(file, "call main\nexit\n\n");
 
 	int filesLen = dynList_size(files);
 	for (int i = 0; i < filesLen; i++)
