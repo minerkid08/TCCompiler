@@ -111,7 +111,7 @@ int main(int argc, const char** argv)
 		return 1;
 
 	FILE* file = fopen(argv[1], "wb");
-	fprintf(file, "call main\n");
+	fprintf(file, "call main\nexit\n\n");
 
 	int filesLen = dynList_size(files);
 	for (int i = 0; i < filesLen; i++)

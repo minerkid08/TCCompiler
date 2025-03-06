@@ -146,10 +146,15 @@ void setTmpVar(Buffer* buf, int reg, int name)
 
 void setTmpVarX(Buffer* buf, int reg, int auxReg, int name)
 {
-	clearReg(auxReg);
 	snprintf(regContents[reg], REGCONT_SIZE, "t%d", name);
 	regContents[auxReg][0] = 0;
-	bufferWrite(buf, "add r%d, sp, %d\nstore [r%d], r%d ; %s\n", auxReg, name * 2, auxReg, reg, regContents[reg]);
+	if (target == ARCH_SYMPHONY)
+	{
+		clearReg(auxReg);
+		bufferWrite(buf, "add r%d, sp, %d\nstore [r%d], r%d ; %s\n", auxReg, name * 2, auxReg, reg, regContents[reg]);
+	}
+	else
+		bufferWrite(buf, "\nstore [sp, r%d], r%d ; %s\n", name * 2, reg, regContents[reg]);
 }
 
 void loadTmpVar(Buffer* buf, int reg, int name)
@@ -159,12 +164,12 @@ void loadTmpVar(Buffer* buf, int reg, int name)
 
 void loadTmpVarX(Buffer* buf, int reg, int auxReg, int name)
 {
-	char target[REGCONT_SIZE];
-	snprintf(target, REGCONT_SIZE, "t%d", name);
+	char targetStr[REGCONT_SIZE];
+	snprintf(targetStr, REGCONT_SIZE, "t%d", name);
 	int foundReg = -1;
 	for (int i = 0; i < REGCOUNT; i++)
 	{
-		if (strcmp(regContents[i], target) == 0)
+		if (strcmp(regContents[i], targetStr) == 0)
 		{
 			if (foundReg == -1)
 				foundReg = i;
@@ -177,12 +182,15 @@ void loadTmpVarX(Buffer* buf, int reg, int auxReg, int name)
 		return;
 	if (foundReg != -1)
 	{
-		bufferWrite(buf, "mov r%d, r%d ; %s\n", reg, foundReg, target);
+		bufferWrite(buf, "mov r%d, r%d ; %s\n", reg, foundReg, targetStr);
 		return;
 	}
 
-	bufferWrite(buf, "sub r%d, sp, %d\nload r%d, [r%d] ; %s\n", reg, name * 2, reg, reg, target);
-	strncpy(target, regContents[reg], REGCONT_SIZE);
+	if (target == ARCH_SYMPHONY)
+		bufferWrite(buf, "sub r%d, sp, %d\nload r%d, [r%d] ; %s\n", reg, name * 2, reg, reg, targetStr);
+	else
+		bufferWrite(buf, "load r%d, [sp, %d] ; %s\n", reg, name * 2, targetStr);
+	strncpy(targetStr, regContents[reg], REGCONT_SIZE);
 }
 
 void clearReg(int reg)

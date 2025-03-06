@@ -3,5 +3,6 @@
   "type": "program",
   "out": "interperter",
   "build": [],
-  "libs": ["lib"]
+  "libs": ["lib"],
+  "lang": "c"
 }
