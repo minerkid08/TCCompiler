@@ -21,9 +21,9 @@ end
 function move(numb, src, dest, spare)
   if(numb == 0) then
     moveDisk(src, dest);
-    return;
+  else
+    move(numb - 1, src, spare, dest);
+    moveDisk(src, dest);
+    move(numb - 1, spare, dest, src);
   end
-  move(numb - 1, src, spare, dest);
-  moveDisk(src, dest);
-  move(numb - 1, spare, dest, src);
 end

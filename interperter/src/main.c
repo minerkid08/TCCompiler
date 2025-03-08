@@ -69,7 +69,7 @@ int main(int argc, const char** argv)
 			buf[buflen] = 0;
 			char* tokenStr = malloc(buflen + 1);
 			strncpy(tokenStr, buf, buflen + 1);
-      //printf("%s\n", tokenStr);
+			// printf("%s\n", tokenStr);
 			if (c == ':')
 			{
 				int len = dynList_size(labels);
@@ -177,6 +177,23 @@ int main(int argc, const char** argv)
 				int r2 = getRegId(token->data);
 				regs[15] = regs[r1] == regs[r2];
 			}
+		}
+		else if (strcmp(token->data, "jmp") == 0)
+		{
+			token = tokens + (++i);
+			int l2 = dynList_size(labels);
+			char found = 0;
+			for (int j = 0; j < l2; j++)
+			{
+				if (strcmp(labels[j].name, token->data) == 0)
+				{
+					found = 1;
+					i = labels[j].addr - 1;
+					break;
+				}
+			}
+			if (found == 0)
+				err("undefined label %s\n", token->data);
 		}
 		else if (strcmp(token->data, "je") == 0)
 		{

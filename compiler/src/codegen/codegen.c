@@ -78,7 +78,7 @@ void genStatement(Buffer* buf, const StatementNode* node)
 			genExpr(buf, j + 1, funCall->argExprs[j]);
 		}
 		bufferWrite(buf, "call %s\n", funCall->name);
-    clearRegs();
+		clearRegs();
 		if (funCall->rtnVar)
 			setVar(buf, 1, funCall->rtnVar);
 		break;
@@ -92,7 +92,18 @@ void genStatement(Buffer* buf, const StatementNode* node)
 		for (int i = 0; i < len; i++)
 			genStatement(buf, condIf->statments + i);
 		popScope(buf);
+		if (condIf->next.type == StatementTypeElse)
+			bufferWrite(buf, "jmp %sElse%d\n", funName, ifc);
 		bufferWrite(buf, "%sIf%d:\n", funName, ifc);
+
+		if (condIf->next.type == StatementTypeElse)
+		{
+			pushScope(buf);
+			int len = dynList_size(condIf->next.elsev.statments);
+			for (int i = 0; i < len; i++)
+				genStatement(buf, condIf->next.elsev.statments + i);
+			bufferWrite(buf, "%sElse%d:\n", funName, ifc);
+		}
 		ifc++;
 		break;
 	}

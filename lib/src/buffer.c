@@ -6,10 +6,10 @@
 
 void bufferInit(Buffer* buf)
 {
-	buf->data = malloc(256);
+	buf->data = malloc(512);
 	assert(buf->data);
 	buf->len = 0;
-	buf->maxLen = 256;
+	buf->maxLen = 512;
 }
 
 void bufferFree(Buffer* buf)
@@ -25,7 +25,7 @@ void bufferWrite(Buffer* buf, const char* fmt, ...)
 	int newLen = buf->len + vsnprintf(0, 0, fmt, va);
 	if (newLen >= buf->maxLen)
 	{
-		buf->maxLen += 256;
+		buf->maxLen += 512;
 		buf->data = realloc(buf->data, buf->maxLen);
 		assert(buf->data);
 	}
