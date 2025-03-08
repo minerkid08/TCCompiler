@@ -68,10 +68,10 @@ int target = ARCH_SYMPHONY;
 
 int main(int argc, const char** argv)
 {
-	const char* filename;
-	const char* outFilename;
+	const char* filename = 0;
+	const char* outFilename = 0;
 
-	if (argc == 1)
+	if (argc < 3)
 	{
 		filename = "test.lua";
 		outFilename = "test.asm";

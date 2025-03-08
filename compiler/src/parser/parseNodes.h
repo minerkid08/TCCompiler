@@ -12,8 +12,9 @@ typedef struct ExprNode ExprNode;
 #define StatementTypeVarDef 2
 #define StatementTypeVarAssign 3
 #define StatementTypeIf 4
-#define StatementTypeReturn 5
-#define StatementTypeWhile 6
+#define StatementTypeElse 5
+#define StatementTypeReturn 6
+#define StatementTypeWhile 7
 
 typedef struct 
 {
@@ -46,8 +47,23 @@ typedef struct
 
 typedef struct
 {
+  StatementNode* statments;
+} StatementNodeElse;
+
+typedef struct
+{
+    char type;
+    union
+    {
+      StatementNodeElse elsev;
+    };
+} IfNext;
+
+typedef struct
+{
   ExprNode* expr;
   StatementNode* statments;
+  IfNext next;
 } StatementNodeIf;
 
 typedef struct

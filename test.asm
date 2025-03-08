@@ -44,27 +44,26 @@ load r2, [sp, 4] ; dest
 call moveDisk
 mov sp, r13
 pop r13
-mov sp, r13
-pop r13
-ret
-mov sp, r13
-pop r13
+jmp moveElse0
 moveIf0:
-load r1, [sp, 6] ; numb
+push r13
+mov r13, sp
+load r1, [sp, 8] ; numb
 sub r1, r1, 1
-load r2, [sp, 4] ; src
-load r3, [sp] ; spare
-load r4, [sp, 2] ; dest
+load r2, [sp, 6] ; src
+load r3, [sp, 2] ; spare
+load r4, [sp, 4] ; dest
 call move
-load r1, [sp, 4] ; src
-load r2, [sp, 2] ; dest
+load r1, [sp, 6] ; src
+load r2, [sp, 4] ; dest
 call moveDisk
-load r1, [sp, 6] ; numb
+load r1, [sp, 8] ; numb
 sub r1, r1, 1
-load r2, [sp] ; spare
-load r3, [sp, 2] ; dest
-load r4, [sp, 4] ; src
+load r2, [sp, 2] ; spare
+load r3, [sp, 4] ; dest
+load r4, [sp, 6] ; src
 call move
+moveElse0:
 mov sp, r13
 pop r13
 ret ; move
