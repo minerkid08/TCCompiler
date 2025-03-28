@@ -80,18 +80,18 @@ void setVarX(Buffer* buf, int reg, int auxReg, const char* name)
 	int idx = getVar(name);
 	int len = dynList_size(vars);
 	if (idx == len - 1)
-		bufferWrite(buf, "store [sp], r%d ; %s\n", reg, name);
+		bufferWrite(buf, "store_16 [sp], r%d ; %s\n", reg, name);
 	else
 	{
 		if (target == ARCH_SYMPHONY)
 		{
-			bufferWrite(buf, "add r%d, sp, %d\nstore [r%d], r%d ; %s\n", auxReg, (len - idx - 1) * 2, auxReg, reg,
+			bufferWrite(buf, "add r%d, sp, %d\nstore_16 [r%d], r%d ; %s\n", auxReg, (len - idx - 1) * 2, auxReg, reg,
 						name);
 			clearReg(auxReg);
 		}
 		else
 		{
-			bufferWrite(buf, "store [sp, %d], r%d ; %s\n", (len - idx - 1) * 2, reg, name);
+			bufferWrite(buf, "store_16 [sp, %d], r%d ; %s\n", (len - idx - 1) * 2, reg, name);
 		}
 	}
 }
@@ -129,13 +129,13 @@ void loadVarX(Buffer* buf, int reg, int auxReg, const char* name)
 	int idx = getVar(name);
 	int len = dynList_size(vars);
 	if (idx == len - 1)
-		bufferWrite(buf, "load r%d, [sp] ; %s\n", reg, name);
+		bufferWrite(buf, "load_16 r%d, [sp] ; %s\n", reg, name);
 	else
 	{
 		if (target == ARCH_SYMPHONY)
-			bufferWrite(buf, "add r%d, sp, %d\nload r%d, [r%d] ; %s\n", reg, (len - idx - 1) * 2, reg, reg, name);
+			bufferWrite(buf, "add r%d, sp, %d\nload_16 r%d, [r%d] ; %s\n", reg, (len - idx - 1) * 2, reg, reg, name);
 		else
-			bufferWrite(buf, "load r%d, [sp, %d] ; %s\n", reg, (len - idx - 1) * 2, name);
+			bufferWrite(buf, "load_16 r%d, [sp, %d] ; %s\n", reg, (len - idx - 1) * 2, name);
 	}
 }
 
@@ -151,10 +151,10 @@ void setTmpVarX(Buffer* buf, int reg, int auxReg, int name)
 	if (target == ARCH_SYMPHONY)
 	{
 		clearReg(auxReg);
-		bufferWrite(buf, "add r%d, sp, %d\nstore [r%d], r%d ; %s\n", auxReg, name * 2, auxReg, reg, regContents[reg]);
+		bufferWrite(buf, "add r%d, sp, %d\nstore_16 [r%d], r%d ; %s\n", auxReg, name * 2, auxReg, reg, regContents[reg]);
 	}
 	else
-		bufferWrite(buf, "\nstore [sp, r%d], r%d ; %s\n", name * 2, reg, regContents[reg]);
+		bufferWrite(buf, "\nstore_16 [sp, r%d], r%d ; %s\n", name * 2, reg, regContents[reg]);
 }
 
 void loadTmpVar(Buffer* buf, int reg, int name)
@@ -187,9 +187,9 @@ void loadTmpVarX(Buffer* buf, int reg, int auxReg, int name)
 	}
 
 	if (target == ARCH_SYMPHONY)
-		bufferWrite(buf, "sub r%d, sp, %d\nload r%d, [r%d] ; %s\n", reg, name * 2, reg, reg, targetStr);
+		bufferWrite(buf, "sub r%d, sp, %d\nload_16 r%d, [r%d] ; %s\n", reg, name * 2, reg, reg, targetStr);
 	else
-		bufferWrite(buf, "load r%d, [sp, %d] ; %s\n", reg, name * 2, targetStr);
+		bufferWrite(buf, "load_16 r%d, [sp, %d] ; %s\n", reg, name * 2, targetStr);
 	strncpy(targetStr, regContents[reg], REGCONT_SIZE);
 }
 
