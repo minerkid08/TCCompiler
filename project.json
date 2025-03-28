@@ -3,6 +3,7 @@
     "compiler",
     "linker",
     "interperter",
+    "assembler",
     "lib"
   ],
   "noLibs": true

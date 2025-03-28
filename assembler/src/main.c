@@ -30,29 +30,7 @@ typedef struct
 	const char* name;
 } Label;
 
-void* heap;
-
-unsigned short readHeap16(unsigned short pos)
-{
-	return *(unsigned short*)(heap + pos);
-}
-
-unsigned char readHeap8(unsigned short pos)
-{
-	return *(unsigned char*)(heap + pos);
-}
-
-void writeHeap16(unsigned short pos, unsigned short value)
-{
-	*(unsigned short*)(heap + pos) = value;
-}
-
-void writeHeap8(unsigned short pos, unsigned char value)
-{
-	*(unsigned char*)(heap + pos) = value;
-}
-
-int getRegId(const char* reg)
+char getRegId(const char* reg)
 {
 	if (strcmp(reg, "sp") == 0)
 		return 14;
@@ -63,7 +41,6 @@ int getRegId(const char* reg)
 
 int main(int argc, const char** argv)
 {
-	heap = malloc(0xffff);
 	const char* filename;
 	if (argc == 1)
 		filename = "out2.asm";

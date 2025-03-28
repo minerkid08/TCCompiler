@@ -1,0 +1,8 @@
+{
+  "name": "assembler",
+  "type": "program",
+  "out": "assembler",
+  "build": [],
+  "libs": ["lib"],
+  "lang": "c"
+}

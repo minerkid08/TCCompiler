@@ -102,6 +102,7 @@ void genStatement(Buffer* buf, const StatementNode* node)
 			int len = dynList_size(condIf->next.elsev.statments);
 			for (int i = 0; i < len; i++)
 				genStatement(buf, condIf->next.elsev.statments + i);
+      popScope(buf);
 			bufferWrite(buf, "%sElse%d:\n", funName, ifc);
 		}
 		ifc++;
